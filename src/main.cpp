@@ -4,28 +4,11 @@
 #include "scheduler.hpp"
 #include "spi.hpp"
 #include "systick.hpp"
+#include "usb.hpp"
 
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
-
-extern "C" void hard_fault_handler() {
-  while (1) {
-    gpio_toggle(GPIOC, GPIO13);
-    for (volatile uint32_t i = 0; i < 480000; i++) {
-    } /* 50ms @ 96MHz AHB */
-  }
-}
-
-extern "C" void syscall(uint8_t num, void *arg0, void *arg1, void *arg2, void *arg3) {
-  (void)num;
-  (void)arg0;
-  (void)arg1;
-  (void)arg2;
-  (void)arg3;
-
-  // TODO: add stuff idk
-}
 
 void test() {
   gpio_toggle(GPIOC, GPIO13); // Toggle LED
@@ -75,6 +58,9 @@ int main() {
   gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
   gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO13);
 
+  // Init USB
+  USB::init();
+
   // Init SPI
   SPI::init();
 
@@ -87,12 +73,15 @@ int main() {
 
   // Check JEDEC ID for W25Q64JV (should be 0xEF 0x40 0x17)
   if (id[0] != 0xEF || id[1] != 0x40 || id[2] != 0x17) {
+    printf("JEDEC ID did not match, expected 0xEF4017, got %02X%02X%02X\n", id[0], id[1], id[2]);
     hard_fault_handler();
   }
 
   // Init FS
-  if (!Filesystem::init())
+  if (!Filesystem::init()) {
+    printf("Failed to initizalize LittleFS");
     hard_fault_handler();
+  }
 
   // Spawn Tasks
   Scheduler::createTask(test);

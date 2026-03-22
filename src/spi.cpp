@@ -2,6 +2,7 @@
 
 #include "scheduler.hpp"
 
+#include <libopencm3/cm3/cortex.h>
 #include <libopencm3/stm32/dma.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
@@ -27,6 +28,7 @@ void SPI::init() {
 }
 
 static void spi_transfer(const uint8_t *tx_buf, uint8_t *rx_buf, size_t len) {
+  cm_disable_interrupts();
   for (size_t i = 0; i < len; ++i) {
     // Wait until TX buffer is empty
     while (!(SPI_SR(SPI1) & SPI_SR_TXE))
@@ -39,6 +41,7 @@ static void spi_transfer(const uint8_t *tx_buf, uint8_t *rx_buf, size_t len) {
     if (rx_buf)
       rx_buf[i] = data;
   }
+  cm_enable_interrupts();
 }
 
 uint8_t SPI::spi_tx_rx(uint8_t tx) {
