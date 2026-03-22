@@ -28,16 +28,21 @@ lfs_config Filesystem::w25q64_lfs_cfg = {
     .inline_max = 0,
 };
 
-void Filesystem::init() {
+bool Filesystem::init() {
   int rc = lfs_mount(&lfs, &w25q64_lfs_cfg);
   if (rc < 0) {
     rc = lfs_format(&lfs, &w25q64_lfs_cfg);
 
     if (rc < 0)
-      return;
+      return false;
 
     rc = lfs_mount(&lfs, &w25q64_lfs_cfg);
   }
+
+  if (rc < 0)
+    return false;
+
+  return true;
 }
 
 int Filesystem::w25q64_read(const lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size) {

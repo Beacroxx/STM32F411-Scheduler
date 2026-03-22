@@ -1,7 +1,5 @@
 #pragma once
 
-#define LFS_MALLOC malloc
-
 #include "lfs.h"
 
 #define FLASH_BLOCK_SIZE  4096
@@ -12,7 +10,7 @@ namespace Filesystem {
 extern lfs_config w25q64_lfs_cfg;
 extern lfs_t lfs;
 
-void init();
+bool init();
 
 int w25q64_read(const lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
 int w25q64_prog(const lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size);
