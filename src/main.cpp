@@ -1,6 +1,7 @@
 // STM32F411CE BlackPill V2.0 With EEPROM
 
 #include "filesystem.hpp"
+#include "malloc.hpp"
 #include "scheduler.hpp"
 #include "spi.hpp"
 #include "systick.hpp"
@@ -11,31 +12,15 @@
 #include <libopencm3/stm32/rcc.h>
 
 void test() {
-  gpio_toggle(GPIOC, GPIO13); // Toggle LED
-  // Wait 500ms using ms counter
+  gpio_toggle(GPIOC, GPIO13);
   SysTick::delayMs(1000);
-  gpio_toggle(GPIOC, GPIO13); // Toggle LED
-  // Wait 500ms using ms counter
+  gpio_toggle(GPIOC, GPIO13);
   SysTick::delayMs(1000);
-
-  int a = 1, b = 2, c = 3, d = 4;
-  int *pa = &a, *pb = &b, *pc = &c, *pd = &d;
-  uint8_t svc_num = 69;
-
-  asm volatile("mov r0, %0\n\t"
-               "mov r1, %1\n\t"
-               "mov r2, %2\n\t"
-               "mov r3, %3\n\t"
-               "svc %4"
-               :
-               : "r"(pa), "r"(pb), "r"(pc), "r"(pd), "I"(svc_num)
-               : "0", "1", "2", "3", "memory");
 }
 
 void test2() {
   while (1) {
-    gpio_toggle(GPIOC, GPIO13); // Toggle LED
-    // Wait 500ms using ms counter
+    gpio_toggle(GPIOC, GPIO13);
     SysTick::delayMs(1500);
   }
 }
@@ -57,6 +42,9 @@ int main() {
   // Set PC13 as output (push-pull)
   gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
   gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO13);
+
+  // Setup malloc
+  Malloc::init();
 
   // Init USB
   USB::init();

@@ -31,6 +31,11 @@ _ZN9Scheduler5startEv:
   LDR r0, [r0]
   MSR psp, r0
 
+  LDR  R0, =0xE000ED20         // NVIC_SHPR3
+  LDR  R1, [R0]
+  ORR  R1, R1, #(0xFF << 16)   // Set PendSV priority to 0xFF
+  STR  R1, [R0]
+
   MOV r0, #2
   MSR CONTROL, r0
 
