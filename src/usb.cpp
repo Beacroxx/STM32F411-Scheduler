@@ -1,6 +1,6 @@
 #include "usb.hpp"
 
-#include "malloc.hpp"
+#include "memorymanager.hpp"
 #include "scheduler.hpp"
 
 #include <libopencm3/cm3/nvic.h>
@@ -209,9 +209,9 @@ void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t) {
     len = space;
 
   uint16_t first = (USB_RX_BUFFER_SIZE - USB::rx_head > len) ? len : USB_RX_BUFFER_SIZE - USB::rx_head;
-  Malloc::memcpy((void *)&USB::rx_buffer[USB::rx_head], buf, first);
+  MM::memcpy((void *)&USB::rx_buffer[USB::rx_head], buf, first);
   if (len > first)
-    Malloc::memcpy((void *)USB::rx_buffer, buf + first, len - first);
+    MM::memcpy((void *)USB::rx_buffer, buf + first, len - first);
 
   USB::rx_head = (USB::rx_head + len) & (USB_RX_BUFFER_SIZE - 1);
 }

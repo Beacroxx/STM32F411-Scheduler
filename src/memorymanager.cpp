@@ -1,73 +1,17 @@
-#include "malloc.hpp"
+#include "memorymanager.hpp"
 
-void *const Malloc::HEAP_START = reinterpret_cast<void *>((reinterpret_cast<uint32_t>(&end) + 3) & ~3);
-const uint32_t Malloc::HEAP_SIZE =
+void *const MM::HEAP_START = reinterpret_cast<void *>((reinterpret_cast<uint32_t>(&end) + 3) & ~3);
+const uint32_t MM::HEAP_SIZE =
     reinterpret_cast<uint32_t>(&_stack) - STACK_RESERVED - reinterpret_cast<uint32_t>(HEAP_START);
-void *const Malloc::HEAP_END = reinterpret_cast<Arena *>(reinterpret_cast<uint32_t>(HEAP_START) + HEAP_SIZE);
+void *const MM::HEAP_END = reinterpret_cast<Arena *>(reinterpret_cast<uint32_t>(HEAP_START) + HEAP_SIZE);
 
-void Malloc::init() {
+void MM::init() {
   memset(HEAP_START, 0, HEAP_SIZE);
   Arena *origin = reinterpret_cast<Arena *>(HEAP_START);
   origin->next = (Arena *)HEAP_END;
 }
 
-void *Malloc::memset(void *ptr, uint8_t value, size_t n) {
-  uint8_t *p = static_cast<uint8_t *>(ptr);
-  const uint32_t word = value | (value << 8) | (value << 16) | (value << 24);
-
-  // Align to 4 bytes
-  if (n >= 4 && ((uint32_t)p & 3) != 0) {
-    size_t head = 4 - ((uint32_t)p & 3);
-    n -= head;
-    while (head--)
-      *p++ = value;
-  }
-
-  // Write words
-  uint32_t *wp = reinterpret_cast<uint32_t *>(p);
-  while (n >= 4) {
-    *wp++ = word;
-    n -= 4;
-  }
-
-  // Write remaining bytes
-  p = reinterpret_cast<uint8_t *>(wp);
-  while (n-- != 0)
-    *p++ = value;
-
-  return ptr;
-}
-
-void *Malloc::memcpy(void *dst, const void *src, size_t n) {
-  uint8_t *_dst = static_cast<uint8_t *>(dst);
-  const uint8_t *_src = static_cast<const uint8_t *>(src);
-
-  // Align to 4 bytes
-  if (n >= 4 && ((uint32_t)_dst & 3) != 0) {
-    size_t head = 4 - ((uint32_t)_dst & 3);
-    n -= head;
-    while (head--)
-      *_dst++ = *_src++;
-  }
-
-  // Copy words
-  uint32_t *_wdst = reinterpret_cast<uint32_t *>(_dst);
-  uint32_t *_wsrc = reinterpret_cast<uint32_t *>(const_cast<uint8_t *>(_src));
-  while (n >= 4) {
-    *_wdst++ = *_wsrc++;
-    n -= 4;
-  }
-
-  // Copy remaining bytes
-  _dst = reinterpret_cast<uint8_t *>(_wdst);
-  _src = reinterpret_cast<uint8_t *>(_wsrc);
-  while (n-- != 0)
-    *_dst++ = *_src++;
-
-  return dst;
-}
-
-void *Malloc::malloc(size_t size) {
+void *MM::malloc(size_t size) {
   size = (size + 3) & ~3; // 4-byte align
 
   Arena *candidate = reinterpret_cast<Arena *>(HEAP_START);
@@ -106,14 +50,14 @@ void *Malloc::malloc(size_t size) {
   return reinterpret_cast<void *>(reinterpret_cast<uint32_t>(newArena) + sizeof(Arena));
 }
 
-void *Malloc::calloc(size_t n, size_t size) {
+void *MM::calloc(size_t n, size_t size) {
   void *p = malloc(n * size);
   if (p)
     memset(p, 0, n * size);
   return p;
 }
 
-void Malloc::free(void *p) {
+void MM::free(void *p) {
   if (!p)
     return;
 
@@ -131,7 +75,7 @@ void Malloc::free(void *p) {
   arena->prev = nullptr;
 }
 
-void *Malloc::realloc(void *p, size_t size) {
+void *MM::realloc(void *p, size_t size) {
   Arena *arena = reinterpret_cast<Arena *>(reinterpret_cast<uint32_t>(p) - sizeof(Arena));
 
   // Shrink in place
@@ -161,11 +105,11 @@ void *Malloc::realloc(void *p, size_t size) {
 
 // C linkage wrappers for newlib
 
-extern "C" void *malloc(size_t size) { return Malloc::malloc(size); }
-extern "C" void *_malloc_r(struct _reent *, size_t size) { return Malloc::malloc(size); }
-extern "C" void free(void *ptr) { Malloc::free(ptr); }
-extern "C" void _free_r(struct _reent *, void *ptr) { Malloc::free(ptr); }
-extern "C" void *realloc(void *ptr, size_t size) { return Malloc::realloc(ptr, size); }
-extern "C" void *_realloc_r(struct _reent *, void *ptr, size_t size) { return Malloc::realloc(ptr, size); }
-extern "C" void *calloc(size_t nmemb, size_t size) { return Malloc::calloc(nmemb, size); }
-extern "C" void *_calloc_r(struct _reent *, size_t nmemb, size_t size) { return Malloc::calloc(nmemb, size); }
+extern "C" void *malloc(size_t size) { return MM::malloc(size); }
+extern "C" void *_malloc_r(struct _reent *, size_t size) { return MM::malloc(size); }
+extern "C" void free(void *ptr) { MM::free(ptr); }
+extern "C" void _free_r(struct _reent *, void *ptr) { MM::free(ptr); }
+extern "C" void *realloc(void *ptr, size_t size) { return MM::realloc(ptr, size); }
+extern "C" void *_realloc_r(struct _reent *, void *ptr, size_t size) { return MM::realloc(ptr, size); }
+extern "C" void *calloc(size_t nmemb, size_t size) { return MM::calloc(nmemb, size); }
+extern "C" void *_calloc_r(struct _reent *, size_t nmemb, size_t size) { return MM::calloc(nmemb, size); }

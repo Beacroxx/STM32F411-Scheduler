@@ -5,7 +5,7 @@
 extern uint8_t end;
 extern uint8_t _stack;
 
-namespace Malloc {
+namespace MM {
 constexpr uint32_t STACK_RESERVED = 8192;
 extern void *const HEAP_START;
 extern void *const HEAP_END;
@@ -25,4 +25,4 @@ void *malloc(size_t size);
 void *calloc(size_t n, size_t size);
 void free(void *p);
 void *realloc(void *p, size_t size);
-} // namespace Malloc
+} // namespace MM

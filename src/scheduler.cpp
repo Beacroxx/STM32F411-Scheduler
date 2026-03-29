@@ -1,6 +1,6 @@
 #include "scheduler.hpp"
 
-#include "malloc.hpp"
+#include "memorymanager.hpp"
 
 #include <cstdlib>
 #include <libopencm3/cm3/nvic.h>
@@ -13,13 +13,13 @@ void Scheduler::taskExit() {
   cur->next->prev = cur->prev;
   cur->sp = nullptr;
 
-  Malloc::free(cur);
+  MM::free(cur);
   while (1)
     Scheduler::yield();
 }
 
 void Scheduler::createTask(void (*entry)(), uint32_t stackSize) {
-  TCB *tcb = static_cast<TCB *>(Malloc::malloc(sizeof(TCB) + stackSize * sizeof(uint32_t)));
+  TCB *tcb = static_cast<TCB *>(MM::malloc(sizeof(TCB) + stackSize * sizeof(uint32_t)));
 
   // Push task context
   tcb->sp = reinterpret_cast<uint32_t *>(reinterpret_cast<uint32_t>(tcb) + sizeof(TCB)) + stackSize;

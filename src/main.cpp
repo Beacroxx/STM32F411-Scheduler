@@ -1,8 +1,8 @@
 // STM32F411CE BlackPill V2.0 With EEPROM
 
 #include "filesystem.hpp"
-#include "malloc.hpp"
 #include "math3d.hpp"
+#include "memorymanager.hpp"
 #include "scheduler.hpp"
 #include "sh1106.hpp"
 #include "spi.hpp"
@@ -100,7 +100,7 @@ void test3() {
     Trig::cos(Vec3(angle, angle2, 0), cos);
 
     for (uint32_t i = 0; i < sizeof(icosahedron) / sizeof(Tri3); i++) {
-      Malloc::memcpy(&tri3D, &icosahedron[i], sizeof(Tri3));
+      MM::memcpy(&tri3D, &icosahedron[i], sizeof(Tri3));
       Math3D::rotate(tri3D, sin, cos);
       if (Math3D::project(tri3D, tri2D)) {
         if (tri2D.area() < 0)
@@ -136,7 +136,7 @@ int main() {
   gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO13);
 
   // Setup malloc
-  Malloc::init();
+  MM::init();
 
   // Init USB
   USB::init();

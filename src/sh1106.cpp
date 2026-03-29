@@ -1,7 +1,7 @@
 #include "sh1106.hpp"
 
 #include "font.hpp"
-#include "malloc.hpp"
+#include "memorymanager.hpp"
 #include "systick.hpp"
 
 #include <libopencm3/stm32/rcc.h>
@@ -71,7 +71,7 @@ void SH1106::update() {
   }
 }
 
-void SH1106::clear() { Malloc::memset(buf, 0x00, 128 * sizeof(uint64_t)); }
+void SH1106::clear() { MM::memset(buf, 0x00, 128 * sizeof(uint64_t)); }
 
 void SH1106::init() {
   gpio_mode_setup(PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SDA | SCL);
