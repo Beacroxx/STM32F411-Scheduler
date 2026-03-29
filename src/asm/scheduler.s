@@ -11,8 +11,9 @@
 .type _ZN9Scheduler5yieldEv, %function
 
 _ZN9Scheduler5yieldEv:
-  LDR r0, =0xE000ED04          // ICSR
-  LDR r1, =0x10000000          // PENDSVSET bit
+  LDR r0, =0xE000ED04      // ICSR
+  LDR r1, [r0]
+  ORR r1, r1, #0x10000000  // Set PENDSVSET bit
   STR r1, [r0]
   BX LR
 
@@ -46,7 +47,6 @@ _ZN9Scheduler5startEv:
   POP {LR}
   POP {PC}
 
-
 /**
  * void pend_sv_handler(void)
  *
@@ -61,18 +61,18 @@ pend_sv_handler:
   LDR r1, =_ZN9Scheduler3curE
   LDR r2, [r1]
   CMP r2, #0
-  BEQ exit
+  BEQ .L_exit
 
   LDR r3, [r2, #4]
   LDR r0, [r2]
   CMP r0, #0
-  BEQ skip_save
+  BEQ .L_skip_save
 
   MRS r0, psp
   STMDB r0!, {r4-r11}
   STR r0, [r2]
 
-skip_save:
+.L_skip_save:
   STR r3, [r1]
 
   LDR r0, [r1]
@@ -80,6 +80,6 @@ skip_save:
   LDMIA r0!, {r4-r11}
   MSR psp, r0
 
-exit:
+.L_exit:
   CPSIE I
   BX LR

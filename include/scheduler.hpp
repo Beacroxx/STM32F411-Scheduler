@@ -11,9 +11,9 @@ struct TCB {
 
 extern TCB *cur;
 
-void yield() __attribute__((naked));
-void start() __attribute__((noreturn, naked));
-void switchTasks() __attribute__((naked));
+void yield();
+void start() __attribute__((noreturn));
+void switchTasks();
 void taskExit() __attribute__((noreturn));
 void createTask(void (*entry)(), uint32_t stackSize = 128);
 } // namespace Scheduler

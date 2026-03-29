@@ -51,6 +51,5 @@ sv_call_handler:
 
     PUSH {r4, LR}
     BL syscall
-    POP {r4, LR}
-    BX LR
-    
+    POP {r4, PC}
+        

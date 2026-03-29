@@ -37,8 +37,3 @@ void SysTick::delayUs(uint32_t delay) {
   while (dwt_read_cycle_counter() - start < ticks)
     ;
 }
-
-extern "C" void sys_tick_handler() {
-  Scheduler::yield();
-  SysTick::ms++;
-}
