@@ -19,13 +19,13 @@ void Scheduler::taskExit() {
 }
 
 void Scheduler::createTask(void (*entry)(), uint32_t stackSize) {
-  TCB *tcb = (TCB *)Malloc::malloc(sizeof(TCB) + stackSize * sizeof(uint32_t));
+  TCB *tcb = static_cast<TCB *>(Malloc::malloc(sizeof(TCB) + stackSize * sizeof(uint32_t)));
 
   // Push task context
-  tcb->sp = (uint32_t *)((uint32_t)tcb + sizeof(TCB)) + stackSize;
-  *(--tcb->sp) = 0x01000000;         // xPSR
-  *(--tcb->sp) = (uint32_t)entry;    // PC
-  *(--tcb->sp) = (uint32_t)taskExit; // LR
+  tcb->sp = reinterpret_cast<uint32_t *>(reinterpret_cast<uint32_t>(tcb) + sizeof(TCB)) + stackSize;
+  *(--tcb->sp) = 0x01000000;                           // xPSR
+  *(--tcb->sp) = reinterpret_cast<uint32_t>(entry);    // PC
+  *(--tcb->sp) = reinterpret_cast<uint32_t>(taskExit); // LR
 
   // Push registers (R12, R0-R3, R4–R11)
   for (int i = 0; i < 13; ++i)

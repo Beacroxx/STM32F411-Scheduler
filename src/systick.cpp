@@ -19,8 +19,7 @@ void SysTick::init() {
   dwt_enable_cycle_counter();
 }
 
-void SysTick::delayMs(uint32_t delay) {
-  uint64_t start = ms;
+void SysTick::delayMs(uint32_t delay, uint64_t start) {
   while ((ms - start) < delay)
     Scheduler::yield();
 }
@@ -34,7 +33,7 @@ void SysTick::delayUs(uint32_t delay) {
     return;
 
   uint32_t start = dwt_read_cycle_counter();
-  uint32_t ticks = start + delay * TICKS_PER_US;
+  uint32_t ticks = delay * TICKS_PER_US;
   while (dwt_read_cycle_counter() - start < ticks)
     ;
 }

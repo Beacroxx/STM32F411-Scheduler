@@ -1,8 +1,8 @@
 #include "usb.hpp"
 
+#include "malloc.hpp"
 #include "scheduler.hpp"
 
-#include <cstring>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
@@ -209,9 +209,9 @@ void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t) {
     len = space;
 
   uint16_t first = (USB_RX_BUFFER_SIZE - USB::rx_head > len) ? len : USB_RX_BUFFER_SIZE - USB::rx_head;
-  memcpy((void *)&USB::rx_buffer[USB::rx_head], buf, first);
+  Malloc::memcpy((void *)&USB::rx_buffer[USB::rx_head], buf, first);
   if (len > first)
-    memcpy((void *)USB::rx_buffer, buf + first, len - first);
+    Malloc::memcpy((void *)USB::rx_buffer, buf + first, len - first);
 
   USB::rx_head = (USB::rx_head + len) & (USB_RX_BUFFER_SIZE - 1);
 }

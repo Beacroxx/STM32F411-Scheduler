@@ -2,7 +2,6 @@
 .cpu cortex-m4
 .thumb
 
-
 /**
  * void Scheduler::yield()
  *

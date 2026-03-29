@@ -46,10 +46,11 @@ bool Filesystem::init() {
 }
 
 int Filesystem::w25q64_read(const lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size) {
-  uint32_t addr = (uint32_t)block * c->block_size + (uint32_t)off;
+  uint32_t addr = static_cast<uint32_t>(block) * c->block_size + static_cast<uint32_t>(off);
   uint8_t *buf = static_cast<uint8_t *>(buffer);
 
-  const uint8_t data[] = {0x0B, (uint8_t)(addr >> 16), (uint8_t)(addr >> 8), (uint8_t)addr};
+  const uint8_t data[] = {0x0B, static_cast<uint8_t>(addr >> 16), static_cast<uint8_t>(addr >> 8),
+                          static_cast<uint8_t>(addr)};
 
   SPI::cs_low();
   SPI::spi_write_buf(data, 4);
@@ -62,7 +63,7 @@ int Filesystem::w25q64_read(const lfs_config *c, lfs_block_t block, lfs_off_t of
 
 int Filesystem::w25q64_prog(const lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer,
                             lfs_size_t size) {
-  uint32_t addr = (uint32_t)block * c->block_size + (uint32_t)off;
+  uint32_t addr = static_cast<uint32_t>(block) * c->block_size + static_cast<uint32_t>(off);
   const uint8_t *buf = static_cast<const uint8_t *>(buffer);
 
   // send Write Enable
@@ -70,7 +71,8 @@ int Filesystem::w25q64_prog(const lfs_config *c, lfs_block_t block, lfs_off_t of
   SPI::spi_write_buf((const uint8_t[]) {0x06}, 1);
   SPI::cs_high();
 
-  const uint8_t data[] = {0x02, (uint8_t)(addr >> 16), (uint8_t)(addr >> 8), (uint8_t)addr};
+  const uint8_t data[] = {0x02, static_cast<uint8_t>(addr >> 16), static_cast<uint8_t>(addr >> 8),
+                          static_cast<uint8_t>(addr)};
 
   SPI::cs_low();
   SPI::spi_write_buf(data, 4);
@@ -92,14 +94,15 @@ int Filesystem::w25q64_prog(const lfs_config *c, lfs_block_t block, lfs_off_t of
 }
 
 int Filesystem::w25q64_erase(const lfs_config *c, lfs_block_t block) {
-  uint32_t addr = (uint32_t)block * c->block_size;
+  uint32_t addr = static_cast<uint32_t>(block) * c->block_size;
 
   // send Write Enable
   SPI::cs_low();
   SPI::spi_write_buf((const uint8_t[]) {0x06}, 1);
   SPI::cs_high();
 
-  const uint8_t data[] = {0x20, (uint8_t)(addr >> 16), (uint8_t)(addr >> 8), (uint8_t)addr};
+  const uint8_t data[] = {0x20, static_cast<uint8_t>(addr >> 16), static_cast<uint8_t>(addr >> 8),
+                          static_cast<uint8_t>(addr)};
 
   SPI::cs_low();
   SPI::spi_write_buf(data, 4);
