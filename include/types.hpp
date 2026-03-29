@@ -3,6 +3,9 @@
 #include <cmath>
 #include <cstdint>
 
+/**
+ * @brief Fixed-point 16.16 signed integer type
+ */
 struct i16f16_t {
   int32_t value;
 
@@ -88,6 +91,7 @@ constexpr i16f16_t operator/(i16f16_t a, i16f16_t b) {
 constexpr i16f16_t operator%(i16f16_t a, i16f16_t b) { return i16f16_t(a.value % b.value, true); }
 
 // Unary operator
+
 constexpr i16f16_t operator-(i16f16_t a) { return i16f16_t(-a.value, true); }
 constexpr i16f16_t operator+(i16f16_t a) { return i16f16_t(a.value, true); }
 
