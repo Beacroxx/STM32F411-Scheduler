@@ -4,18 +4,18 @@
 
 lfs_t Filesystem::lfs;
 
-lfs_config Filesystem::w25q64_lfs_cfg = {
+static lfs_config w25q64_lfs_cfg = {
     .context = NULL,
-    .read = w25q64_read,
-    .prog = w25q64_prog,
-    .erase = w25q64_erase,
-    .sync = w25q64_sync,
-    .read_size = FLASH_SECTOR_SIZE,
-    .prog_size = FLASH_SECTOR_SIZE,
-    .block_size = FLASH_BLOCK_SIZE,
-    .block_count = FLASH_SIZE / FLASH_BLOCK_SIZE,
+    .read = Filesystem::w25q64_read,
+    .prog = Filesystem::w25q64_prog,
+    .erase = Filesystem::w25q64_erase,
+    .sync = Filesystem::w25q64_sync,
+    .read_size = Filesystem::FLASH_SECTOR_SIZE,
+    .prog_size = Filesystem::FLASH_SECTOR_SIZE,
+    .block_size = Filesystem::FLASH_BLOCK_SIZE,
+    .block_count = Filesystem::FLASH_SIZE / Filesystem::FLASH_BLOCK_SIZE,
     .block_cycles = 1000,
-    .cache_size = FLASH_BLOCK_SIZE,
+    .cache_size = Filesystem::FLASH_BLOCK_SIZE,
     .lookahead_size = 16,
     .compact_thresh = (lfs_size_t)-1,
     .read_buffer = nullptr,
@@ -49,12 +49,12 @@ int Filesystem::w25q64_read(const lfs_config *c, lfs_block_t block, lfs_off_t of
   uint32_t addr = static_cast<uint32_t>(block) * c->block_size + static_cast<uint32_t>(off);
   uint8_t *buf = static_cast<uint8_t *>(buffer);
 
-  const uint8_t data[] = {0x0B, static_cast<uint8_t>(addr >> 16), static_cast<uint8_t>(addr >> 8),
+  const uint8_t data[] = {READ_DATA, static_cast<uint8_t>(addr >> 16), static_cast<uint8_t>(addr >> 8),
                           static_cast<uint8_t>(addr)};
 
   SPI::cs_low();
   SPI::spi_write_buf(data, 4);
-  SPI::spi_write_buf((const uint8_t[]) {0xFF}, 1);
+  SPI::spi_write_buf((const uint8_t[]) {DUMMY_BYTE}, 1);
   SPI::spi_read_buf(buf, size);
   SPI::cs_high();
 
@@ -68,10 +68,10 @@ int Filesystem::w25q64_prog(const lfs_config *c, lfs_block_t block, lfs_off_t of
 
   // send Write Enable
   SPI::cs_low();
-  SPI::spi_write_buf((const uint8_t[]) {0x06}, 1);
+  SPI::spi_write_buf((const uint8_t[]) {WRITE_ENABLE}, 1);
   SPI::cs_high();
 
-  const uint8_t data[] = {0x02, static_cast<uint8_t>(addr >> 16), static_cast<uint8_t>(addr >> 8),
+  const uint8_t data[] = {PAGE_PROGRAM, static_cast<uint8_t>(addr >> 16), static_cast<uint8_t>(addr >> 8),
                           static_cast<uint8_t>(addr)};
 
   SPI::cs_low();
@@ -79,12 +79,12 @@ int Filesystem::w25q64_prog(const lfs_config *c, lfs_block_t block, lfs_off_t of
   SPI::spi_write_buf(buf, size);
   SPI::cs_high();
 
-  // wait for WIP bit (optional, but recommended)
+  // wait for WIP bit
   while (true) {
     uint8_t sts;
     SPI::cs_low();
-    SPI::spi_write_buf((const uint8_t[]) {0x05}, 1);
-    sts = SPI::spi_tx_rx(0xFF);
+    SPI::spi_write_buf((const uint8_t[]) {READ_STATUS_REG}, 1);
+    sts = SPI::spi_tx_rx(DUMMY_BYTE);
     SPI::cs_high();
     if (!(sts & 0x01))
       break;
@@ -98,10 +98,10 @@ int Filesystem::w25q64_erase(const lfs_config *c, lfs_block_t block) {
 
   // send Write Enable
   SPI::cs_low();
-  SPI::spi_write_buf((const uint8_t[]) {0x06}, 1);
+  SPI::spi_write_buf((const uint8_t[]) {WRITE_ENABLE}, 1);
   SPI::cs_high();
 
-  const uint8_t data[] = {0x20, static_cast<uint8_t>(addr >> 16), static_cast<uint8_t>(addr >> 8),
+  const uint8_t data[] = {SECTOR_ERASE, static_cast<uint8_t>(addr >> 16), static_cast<uint8_t>(addr >> 8),
                           static_cast<uint8_t>(addr)};
 
   SPI::cs_low();
@@ -112,8 +112,8 @@ int Filesystem::w25q64_erase(const lfs_config *c, lfs_block_t block) {
   while (true) {
     uint8_t sts;
     SPI::cs_low();
-    SPI::spi_write_buf((const uint8_t[]) {0x05}, 1);
-    sts = SPI::spi_tx_rx(0xFF);
+    SPI::spi_write_buf((const uint8_t[]) {READ_STATUS_REG}, 1);
+    sts = SPI::spi_tx_rx(DUMMY_BYTE);
     SPI::cs_high();
     if (!(sts & 0x01))
       break;

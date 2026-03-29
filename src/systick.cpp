@@ -5,6 +5,8 @@
 #include <libopencm3/cm3/dwt.h>
 #include <libopencm3/cm3/systick.h>
 
+static constexpr uint32_t TICKS_PER_US = 96;
+
 volatile uint64_t SysTick::ms = 0;
 
 void SysTick::init() {

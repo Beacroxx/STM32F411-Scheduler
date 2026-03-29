@@ -8,14 +8,16 @@
 
 Scheduler::TCB *Scheduler::cur = nullptr;
 
-void Scheduler::taskExit() {
+static void taskExit() {
+  using namespace Scheduler;
+
   cur->prev->next = cur->next;
   cur->next->prev = cur->prev;
   cur->sp = nullptr;
 
   MM::free(cur);
   while (1)
-    Scheduler::yield();
+    yield();
 }
 
 void Scheduler::createTask(void (*entry)(), uint32_t stackSize) {

@@ -4,7 +4,7 @@
 #include <cstdint>
 
 /**
- * @brief Fixed-point 16.16 signed integer type
+ * @brief Fixed-point 16.16 signed integer type.
  */
 struct i16f16_t {
   int32_t value;
@@ -104,7 +104,7 @@ constexpr bool operator<=(i16f16_t a, i16f16_t b) { return a.value <= b.value; }
 constexpr bool operator>(i16f16_t a, i16f16_t b) { return a.value > b.value; }
 constexpr bool operator>=(i16f16_t a, i16f16_t b) { return a.value >= b.value; }
 
-// Mixed-type arithmetic (integral types to f15_16_t)
+// Mixed-type arithmetic (integral types to i16f16_t)
 
 // int
 constexpr i16f16_t operator+(i16f16_t a, int b) { return a + i16f16_t(static_cast<int32_t>(b)); }

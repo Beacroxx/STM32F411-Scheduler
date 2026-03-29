@@ -5,6 +5,9 @@
 // https://github.com/ChuckM/bb-lcd/blob/master/font-5x7.c
 
 // clang-format off
+/**
+ * @brief 5x7 pixel monochrome font.
+ */
 const uint8_t font_5x7[] = {
   0x00, 0x00, 0x00, 0x00, 0x00,
 	0x3E, 0x5B, 0x4F, 0x5B, 0x3E,
