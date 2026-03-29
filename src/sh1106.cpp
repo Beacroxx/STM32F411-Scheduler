@@ -129,10 +129,57 @@ void SH1106::drawLine(const Line2 &l, bool white) {
   }
 }
 
-void SH1106::drawTriangle(const Tri2 &t, bool white) {
-  drawLine(Line2(t.v1, t.v2), white);
-  drawLine(Line2(t.v2, t.v3), white);
-  drawLine(Line2(t.v3, t.v1), white);
+void SH1106::drawTriangle(const Tri2 &t, bool fill, bool white) {
+  if (!fill) {
+    drawLine(Line2(t.v1, t.v2), white);
+    drawLine(Line2(t.v2, t.v3), white);
+    drawLine(Line2(t.v3, t.v1), white);
+    return;
+  }
+
+  const i16f16_t x1 = t.v1.x, x2 = t.v2.x, x3 = t.v3.x;
+  i16f16_t min_x = x1 < x2 ? (x1 < x3 ? x1 : x3) : (x2 < x3 ? x2 : x3);
+  i16f16_t max_x = x1 > x2 ? (x1 > x3 ? x1 : x3) : (x2 > x3 ? x2 : x3);
+
+  int32_t bxMin = static_cast<int32_t>(min_x);
+  int32_t bxMax = static_cast<int32_t>(max_x + i16f16_t(1));
+
+  const i16f16_t y1 = t.v1.y, y2 = t.v2.y, y3 = t.v3.y;
+
+  for (int32_t x = bxMin; x <= bxMax; ++x) {
+    const i16f16_t fx = i16f16_t(x) + i16f16_t(0.5f);
+
+    i16f16_t ymin = i16f16_t(-32768);
+    i16f16_t ymax = i16f16_t(-32768);
+
+    if (x2 != x1)
+      if (((x1 <= fx) & (x2 > fx)) | ((x2 <= fx) & (x1 > fx)))
+        ymin = y1 + (y2 - y1) * ((fx - x1) / (x2 - x1));
+
+    if (x3 != x2)
+      if (((x2 <= fx) & (x3 > fx)) | ((x3 <= fx) & (x2 > fx))) {
+        i16f16_t v = y2 + (y3 - y2) * ((fx - x2) / (x3 - x2));
+        if (ymin == i16f16_t(-32768))
+          ymin = v;
+        else {
+          ymax = (v > ymin) ? v : ymin;
+          ymin = (v > ymin) ? ymin : v;
+        }
+      }
+    if (x1 != x3)
+      if (((x3 <= fx) & (x1 > fx)) | ((x1 <= fx) & (x3 > fx))) {
+        i16f16_t v = y3 + (y1 - y3) * ((fx - x3) / (x1 - x3));
+        ymax = (v > ymin) ? v : ymin;
+        ymin = (v > ymin) ? ymin : v;
+      }
+
+    if (ymin == i16f16_t(-32768) || ymax == i16f16_t(-32768) || ymin == ymax)
+      continue;
+
+    int32_t sy = static_cast<int32_t>(ymin + i16f16_t(0.5f));
+    int32_t ey = static_cast<int32_t>(ymax + i16f16_t(0.5f));
+    drawFastVLine(Vec2(x, sy), ey - sy, white);
+  }
 }
 
 void SH1106::drawFastVLine(const Vec2 &v, uint32_t l, bool white) { drawFastRect(Rect2(v, Vec2(1, l)), false, white); }

@@ -1,6 +1,7 @@
 // STM32F411CE BlackPill V2.0 With EEPROM
 
 #include "filesystem.hpp"
+#include "font.hpp"
 #include "math3d.hpp"
 #include "memorymanager.hpp"
 #include "scheduler.hpp"
@@ -49,7 +50,7 @@ constexpr Vec3 vtx[12] = {
 };
 
 // Icosahedron faces (counter-clockwise winding)
-const Tri3 icosahedron[] = {
+constexpr Tri3 icosahedron[] = {
   Tri3(vtx[0], vtx[11], vtx[5]),
   Tri3(vtx[0], vtx[5], vtx[1]),
   Tri3(vtx[0], vtx[1], vtx[7]),
@@ -103,9 +104,14 @@ void test3() {
       MM::memcpy(&tri3D, &icosahedron[i], sizeof(Tri3));
       Math3D::rotate(tri3D, sin, cos);
       if (Math3D::project(tri3D, tri2D)) {
-        if (tri2D.area() < 0)
+        if (tri2D.area() < 0) {
           SH1106::drawTriangle(tri2D);
+        }
       }
+    }
+
+    for (uint32_t i = 0; i < 64; i++) {
+      SH1106::buf[i] = ~SH1106::buf[i];
     }
 
     angle += INCR1;
@@ -166,7 +172,7 @@ int main() {
   // Spawn Tasks
   Scheduler::createTask(test);
   Scheduler::createTask(test2);
-  Scheduler::createTask(test3);
+  Scheduler::createTask(test3, 256);
 
   Scheduler::start();
 }

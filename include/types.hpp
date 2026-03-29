@@ -319,21 +319,21 @@ template <typename T> constexpr bool operator>=(T, i16f16_t) = delete;
 // Increment/Decrement
 
 constexpr i16f16_t &operator++(i16f16_t &a) {
-  ++a.value;
+  a.value += 65536;
   return a;
 }
 constexpr i16f16_t operator++(i16f16_t &a, int) {
   i16f16_t tmp = a;
-  ++a.value;
+  a.value += 65536;
   return tmp;
 }
 constexpr i16f16_t &operator--(i16f16_t &a) {
-  --a.value;
+  a.value -= 65536;
   return a;
 }
 constexpr i16f16_t operator--(i16f16_t &a, int) {
   i16f16_t tmp = a;
-  --a.value;
+  a.value -= 65536;
   return tmp;
 }
 
@@ -415,7 +415,9 @@ struct Tri2 {
   Tri2() = default;
   constexpr explicit Tri2(Vec2 _v1, Vec2 _v2, Vec2 _v3) : v1(_v1), v2(_v2), v3(_v3) {}
 
-  inline i16f16_t area() { return (v2.x - v1.x) * (v3.y - v1.y) - (v2.y - v1.y) * (v3.x - v1.x); }
+  inline i16f16_t area() const { return (v2.x - v1.x) * (v3.y - v1.y) - (v2.y - v1.y) * (v3.x - v1.x); }
+
+  inline Vec2 center() const { return Vec2((v1.x + v2.x + v3.x) / i16f16_t(3), (v1.y + v2.y + v3.y) / i16f16_t(3)); }
 };
 
 struct Tri3 {

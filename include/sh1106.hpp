@@ -93,9 +93,10 @@ void drawFastHLine(const Vec2 &v, uint32_t l, bool white = true);
 /**
  * @brief Draw a triangle.
  * @param t Triangle to draw.
+ * @param fill Fill the triangle.
  * @param white True for white, false for black.
  */
-void drawTriangle(const Tri2 &t, bool white = true);
+void drawTriangle(const Tri2 &t, bool fill = false, bool white = true);
 
 /**
  * @brief Draw a rectangle.
