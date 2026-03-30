@@ -91,9 +91,9 @@ void test3() {
   static Vec3 sin;
   static Vec3 cos;
 
-  constexpr i16f16_t INCR1 = i16f16_t(0.01f);
-  constexpr i16f16_t INCR2 = F_CONST::PI / 1000;
   constexpr i16f16_t RAD_CONV = 180 / F_CONST::PI;
+  constexpr i16f16_t INCR1 = F_CONST::PHI / RAD_CONV;
+  constexpr i16f16_t INCR2 = 1 / RAD_CONV;
 
   while (1) {
     uint64_t start = SysTick::ms;
@@ -112,14 +112,14 @@ void test3() {
       }
     }
 
-    printf("Angle: {}\n", (angle * RAD_CONV) % 360);
+    printf("Angle: {}\n", angle * RAD_CONV);
 
     for (uint32_t i = 0; i < 64; i++) {
       SH1106::buf[i] = ~SH1106::buf[i];
     }
 
-    angle += INCR1;
-    angle2 += INCR2;
+    angle = angle > F_CONST::TWOPI ? (angle + INCR1) % F_CONST::TWOPI : angle + INCR1;
+    angle2 = angle2 > F_CONST::TWOPI ? (angle2 + INCR2) % F_CONST::TWOPI : angle2 + INCR2;
 
     SH1106::update();
     SysTick::delayMs(16, start);

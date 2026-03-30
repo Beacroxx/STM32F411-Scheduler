@@ -52,6 +52,7 @@ constexpr i16f16_t _1_PI = i16f16_t(static_cast<float>(M_1_PI));
 constexpr i16f16_t _2_PI = i16f16_t(static_cast<float>(M_2_PI));
 constexpr i16f16_t _2_SQRTPI = i16f16_t(static_cast<float>(M_2_SQRTPI));
 constexpr i16f16_t SQRT2 = i16f16_t(static_cast<float>(M_SQRT2));
+constexpr i16f16_t SQRT3 = i16f16_t(static_cast<float>(M_SQRT3));
 constexpr i16f16_t SQRT1_2 = i16f16_t(static_cast<float>(M_SQRT1_2));
 } // namespace F_CONST
 
