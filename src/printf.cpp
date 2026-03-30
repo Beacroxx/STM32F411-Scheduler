@@ -71,22 +71,29 @@ template <> char *hexToBuf(char *buf, i16f16_t v) {
 }
 
 template <typename T> char *toBuf(char *buf, T v) {
+  using U = Util::makeUnsignedT<T>;
   if (v == 0) {
     *buf++ = '0';
     return buf;
   }
 
+  U value = v;
+
   if constexpr (Util::isSignedV<T>) {
     if (v < 0) {
       *buf++ = '-';
-      v = -v;
+      if (v == (T(1)) << (sizeof(T) * 8 - 1)) {
+        value = U(-(v + 1)) + 1;
+      } else {
+        value = -v;
+      }
     }
   }
 
   uint32_t i = 0;
-  while (v) {
-    buf[i++] = '0' + (v % 10);
-    v /= 10;
+  while (value) {
+    buf[i++] = '0' + (value % 10);
+    value /= 10;
   }
 
   uint32_t l = 0;
