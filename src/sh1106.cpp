@@ -4,6 +4,7 @@
 #include "memorymanager.hpp"
 #include "systick.hpp"
 
+#include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 
 uint64_t SH1106::buf[WIDTH];
@@ -30,14 +31,10 @@ const uint8_t SH1106::init_seq[] = {
 void SH1106::send(uint8_t byte) {
   uint32_t i = 8;
   do {
-    if (byte & 0x80)
-      gpio_set(PORT, SDA);
-    else
-      gpio_clear(PORT, SDA);
-
-    gpio_set(PORT, SCL);
-    SysTick::delayCyc(1);
-    gpio_clear(PORT, SCL);
+    GPIO_BSRR(PORT) = byte & 0x80 ? SDA : SDA << 16;
+    GPIO_BSRR(PORT) = SCL;
+    SysTick::delayCyc(3);
+    GPIO_BSRR(PORT) = SCL << 16;
     byte <<= 1;
   } while (i--);
 }

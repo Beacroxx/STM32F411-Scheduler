@@ -4,6 +4,7 @@
 #include "font.hpp"
 #include "math3d.hpp"
 #include "memorymanager.hpp"
+#include "printf.hpp"
 #include "scheduler.hpp"
 #include "sh1106.hpp"
 #include "spi.hpp"
@@ -82,16 +83,17 @@ void test3() {
   SH1106::init();
   SysTick::delayMs(1000);
 
-  i16f16_t angle = 0;
-  i16f16_t angle2 = 0;
+  static i16f16_t angle = 0;
+  static i16f16_t angle2 = 0;
 
-  Tri2 tri2D;
-  Tri3 tri3D;
-  Vec3 sin;
-  Vec3 cos;
+  static Tri2 tri2D;
+  static Tri3 tri3D;
+  static Vec3 sin;
+  static Vec3 cos;
 
   constexpr i16f16_t INCR1 = i16f16_t(0.01f);
   constexpr i16f16_t INCR2 = F_CONST::PI / 1000;
+  constexpr i16f16_t RAD_CONV = 180 / F_CONST::PI;
 
   while (1) {
     uint64_t start = SysTick::ms;
@@ -109,6 +111,8 @@ void test3() {
         }
       }
     }
+
+    printf("Angle: {}\n", (angle * RAD_CONV) % 360);
 
     for (uint32_t i = 0; i < 64; i++) {
       SH1106::buf[i] = ~SH1106::buf[i];
@@ -159,7 +163,7 @@ int main() {
 
   // Check JEDEC ID for W25Q64JV (should be 0xEF 0x40 0x17)
   if (id[0] != 0xEF || id[1] != 0x40 || id[2] != 0x17) {
-    printf("JEDEC ID did not match, expected 0xEF4017, got %02X%02X%02X\n", id[0], id[1], id[2]);
+    printf("JEDEC ID did not match, expected 0xEF4017, got 0x{X}{X}{X}\n", id[0], id[1], id[2]);
     hard_fault_handler();
   }
 

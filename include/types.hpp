@@ -437,3 +437,88 @@ struct Rect2 {
 constexpr i16f16_t abs(i16f16_t a) { return (a.value < 0) ? i16f16_t(-a.value, true) : a; }
 constexpr Vec2 abs(const Vec2 &v) { return Vec2(abs(v.x), abs(v.y)); }
 constexpr Vec3 abs(const Vec3 &v) { return Vec3(abs(v.x), abs(v.y), abs(v.z)); }
+
+// Random utilities
+namespace Util {
+
+enum class fmtType {
+  NONE,
+  INT8,
+  UINT8,
+  INT16,
+  UINT16,
+  INT32,
+  UINT32,
+  INT64,
+  UINT64,
+  CSTR,
+  I16F16,
+};
+
+struct fmtArg {
+  fmtType type;
+  const void *ptr;
+};
+
+template <typename T, typename U> struct isSame {
+  static constexpr bool value = false;
+};
+
+template <typename T> struct isSame<T, T> {
+  static constexpr bool value = true;
+};
+
+template <typename T, typename U> constexpr bool isSameV = isSame<T, U>::value;
+
+template <typename T> struct makeUnsigned;
+template <> struct makeUnsigned<int8_t> {
+  using type = uint8_t;
+};
+template <> struct makeUnsigned<uint8_t> {
+  using type = uint8_t;
+};
+template <> struct makeUnsigned<int16_t> {
+  using type = uint16_t;
+};
+template <> struct makeUnsigned<uint16_t> {
+  using type = uint16_t;
+};
+template <> struct makeUnsigned<int32_t> {
+  using type = uint32_t;
+};
+template <> struct makeUnsigned<uint32_t> {
+  using type = uint32_t;
+};
+template <> struct makeUnsigned<int64_t> {
+  using type = uint64_t;
+};
+template <> struct makeUnsigned<uint64_t> {
+  using type = uint64_t;
+};
+
+template <typename T> using makeUnsignedT = typename makeUnsigned<T>::type;
+
+template <typename T>
+constexpr fmtType argTypeV = isSameV<T, int8_t>         ? fmtType::INT8
+                             : isSameV<T, uint8_t>      ? fmtType::UINT8
+                             : isSameV<T, int16_t>      ? fmtType::INT16
+                             : isSameV<T, uint16_t>     ? fmtType::UINT16
+                             : isSameV<T, int32_t>      ? fmtType::INT32
+                             : isSameV<T, uint32_t>     ? fmtType::UINT32
+                             : isSameV<T, int64_t>      ? fmtType::INT64
+                             : isSameV<T, uint64_t>     ? fmtType::UINT64
+                             : isSameV<T, const char *> ? fmtType::CSTR
+                             : isSameV<T, i16f16_t>     ? fmtType::I16F16
+                                                        : fmtType::NONE;
+
+struct fmtStr {
+  const char *data;
+  size_t size;
+
+  template <size_t N> constexpr fmtStr(const char (&s)[N]) : data(s), size(N - 1) {}
+  operator const char *() const { return data; }
+  char operator[](size_t i) const { return data[i]; }
+};
+
+template <typename T> constexpr bool isSignedV = T(-1) < T(0);
+} // namespace Util

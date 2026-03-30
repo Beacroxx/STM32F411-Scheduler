@@ -113,3 +113,6 @@ extern "C" void *realloc(void *ptr, size_t size) { return MM::realloc(ptr, size)
 extern "C" void *_realloc_r(struct _reent *, void *ptr, size_t size) { return MM::realloc(ptr, size); }
 extern "C" void *calloc(size_t nmemb, size_t size) { return MM::calloc(nmemb, size); }
 extern "C" void *_calloc_r(struct _reent *, size_t nmemb, size_t size) { return MM::calloc(nmemb, size); }
+
+extern "C" void *memcpy(void *dst, const void *src, size_t n) { return MM::memcpy(dst, src, n); }
+extern "C" void *memset(void *dst, int value, size_t n) { return MM::memset(dst, value, n); }

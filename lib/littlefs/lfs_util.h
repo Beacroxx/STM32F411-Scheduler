@@ -38,6 +38,17 @@
 #include LFS_STRINGIZE(LFS_DEFINES)
 #endif
 
+#define LFS_NO_MALLOC
+#define LFS_NO_ASSERT
+#define LFS_NO_DEBUG
+#define LFS_NO_WARN
+#define LFS_NO_ERROR
+
+#include "../../include/memorymanager.h"
+
+#define LFS_MALLOC malloc
+#define LFS_FREE free
+
 // System includes
 #include <stdint.h>
 #include <stdbool.h>
@@ -61,7 +72,6 @@
 extern "C"
 {
 #endif
-
 
 // Macros, may be replaced by system specific wrappers. Arguments to these
 // macros must not have side-effects as the macros can be removed for a smaller

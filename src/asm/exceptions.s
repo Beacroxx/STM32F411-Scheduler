@@ -37,6 +37,7 @@ hard_fault_handler:
 .type sv_call_handler, %function
 
 sv_call_handler:
+    PUSH {r4, LR}
     TST LR, #4
     ITE EQ
     MRSEQ r4, msp
@@ -49,7 +50,8 @@ sv_call_handler:
     LDR r3, [r4, #8]
     LDR r4, [r4, #12]
 
-    PUSH {r4, LR}
+    PUSH {r4}
     BL syscall
+    ADD sp, sp, #4
     POP {r4, PC}
         

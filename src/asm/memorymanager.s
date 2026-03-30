@@ -11,14 +11,18 @@
 .type _ZN2MM6memcpyEPvPKvj, %function
 
 _ZN2MM6memcpyEPvPKvj:
-	PUSH    {r0, r4-r7}
+	PUSH    {r0, r4-r7, lr}
 	CMP     r2, #0
 	BEQ     .L_cpy_end
 
-// Align dst to 4 bytes
+// Align both dst and src to 4 bytes
 .L_cpy_align:
 	TST     r0, #3
-	BEQ     .L_cpy_word
+	BNE     .L_cpy_align_byte
+	TST     r1, #3
+	BNE     .L_cpy_align_byte
+	B       .L_cpy_word
+.L_cpy_align_byte:
 	CMP     r2, #0
 	BEQ     .L_cpy_end
 	LDRB    r3, [r1], #1
@@ -49,23 +53,23 @@ _ZN2MM6memcpyEPvPKvj:
 	BNE     .L_cpy_byte_copy
 
 .L_cpy_end:
-	POP     {r0, r4-r7}
-  BX LR
+	POP     {r0, r4-r7, pc}
 
 /**
- * void *MM::memset(void *ptr, uint8_t value, size_t n)
+ * void *MM::memset(void *ptr, int value, size_t n)
  *
  * Fast quad-word-fill memset for STM32F411 (Cortex-M4)
  */
-.global _ZN2MM6memsetEPvhj
-.type _ZN2MM6memsetEPvhj, %function
+.global _ZN2MM6memsetEPvij
+.type _ZN2MM6memsetEPvij, %function
 
-_ZN2MM6memsetEPvhj:
-	PUSH    {r0, r4}
+_ZN2MM6memsetEPvij:
+	PUSH    {r0, r4, lr}
 	CMP     r2, #0
 	BEQ     .L_set_end
 
 	// Prepare word value in r3
+	UXTB		r1, r1
 	ORR     r3, r1, r1, LSL #8
 	ORR     r3, r3, r3, LSL #16
 
@@ -103,5 +107,4 @@ _ZN2MM6memsetEPvhj:
 	BNE     .L_set_byte_fill
 
 .L_set_end:
-	POP     {r0, r4}
-  BX LR
+	POP     {r0, r4, pc}

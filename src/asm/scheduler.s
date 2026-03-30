@@ -64,6 +64,7 @@ pend_sv_handler:
   BEQ .L_exit
 
   LDR r3, [r2, #4]
+  STR r3, [r1]
   LDR r0, [r2]
   CMP r0, #0
   BEQ .L_skip_save
@@ -73,8 +74,6 @@ pend_sv_handler:
   STR r0, [r2]
 
 .L_skip_save:
-  STR r3, [r1]
-
   LDR r0, [r1]
   LDR r0, [r0]
   LDMIA r0!, {r4-r11}

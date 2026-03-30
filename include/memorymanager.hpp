@@ -51,7 +51,7 @@ void init();
  * @param n Number of bytes.
  * @return Pointer to memory block.
  */
-void *memset(void *ptr, uint8_t value, size_t n);
+void *memset(void *ptr, int value, size_t n);
 
 /**
  * @brief Copy memory from source to destination.
