@@ -93,4 +93,28 @@ void free(void *p);
  * @return Pointer to reallocated memory or nullptr on failure.
  */
 void *realloc(void *p, size_t size);
+
+/**
+ * @brief Copy from linear buffer to circular buffer with wrap-around.
+ *
+ * @param circBuf Pointer to circular buffer.
+ * @param bufSize Size of the circular buffer.
+ * @param head Start index in the circular buffer.
+ * @param src Source linear buffer.
+ * @param len Number of bytes to copy.
+ * @return Number of bytes actually copied.
+ */
+size_t copyToCirc(void *circBuf, size_t bufSize, size_t head, const void *src, size_t len);
+
+/**
+ * @brief Copy from circular buffer to linear buffer with wrap-around.
+ *
+ * @param dst Destination linear buffer.
+ * @param circBuf Pointer to circular buffer.
+ * @param bufSize Size of the circular buffer.
+ * @param tail Start index in the circular buffer.
+ * @param len Number of bytes to copy.
+ * @return Number of bytes actually copied.
+ */
+size_t copyFromCirc(void *dst, const void *circBuf, size_t bufSize, size_t tail, size_t len);
 } // namespace MM

@@ -2,6 +2,7 @@
 
 #include "memorymanager.hpp"
 #include "types.hpp"
+#include "uart.hpp"
 #include "usb.hpp"
 
 #include <cstring>
@@ -271,13 +272,11 @@ int __printfImpl(const Util::fmtStr &fmt, Util::fmtArg *args, size_t n) {
 
   size_t len = __sprintfImpl(fmt, buf, args, n);
 
-  size_t sent = 0;
-  while (sent < len) {
-    uint32_t chunk = (len - sent > 64) ? 64 : (len - sent);
-    while (usbd_ep_write_packet(USB::usbd_dev, 0x82, buf + sent, chunk) == 0)
-      ;
-    sent += chunk;
-  }
+#if COMM == 2
+  USB::send(buf, len);
+#elif COMM == 1
+  UART::send(buf, len);
+#endif
 
   MM::free(buf);
 

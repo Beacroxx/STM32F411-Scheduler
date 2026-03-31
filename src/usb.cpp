@@ -8,12 +8,13 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/usb/dwc/otg_fs.h>
 
+#if COMM == 2
 usbd_device *USB::usbd_dev;
 uint8_t USB::control_buffer[128];
 
-volatile uint8_t USB::rx_buffer[USB_RX_BUFFER_SIZE];
-volatile uint16_t USB::rx_head = 0;
-volatile uint16_t USB::rx_tail = 0;
+volatile uint8_t USB::rxBuffer[RX_BUFFER_SIZE];
+volatile uint16_t USB::rxHead = 0;
+volatile uint16_t USB::rxTail = 0;
 
 const usb_device_descriptor dev = {
     .bLength = USB_DT_DEVICE_SIZE,
@@ -204,16 +205,16 @@ void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t) {
   while (usbd_ep_write_packet(usbd_dev, 0x82, buf, len) == 0)
     ;
 
-  uint16_t space = (USB_RX_BUFFER_SIZE + USB::rx_tail - USB::rx_head - 1) & (USB_RX_BUFFER_SIZE - 1);
+  uint16_t space = (USB::RX_BUFFER_SIZE + USB::rxTail - USB::rxHead - 1) & (USB::RX_BUFFER_SIZE - 1);
   if (len > space)
     len = space;
 
-  uint16_t first = (USB_RX_BUFFER_SIZE - USB::rx_head > len) ? len : USB_RX_BUFFER_SIZE - USB::rx_head;
-  MM::memcpy((void *)&USB::rx_buffer[USB::rx_head], buf, first);
+  uint16_t first = (USB::RX_BUFFER_SIZE - USB::rxHead > len) ? len : USB::RX_BUFFER_SIZE - USB::rxHead;
+  MM::memcpy((void *)&USB::rxBuffer[USB::rxHead], buf, first);
   if (len > first)
-    MM::memcpy((void *)USB::rx_buffer, buf + first, len - first);
+    MM::memcpy((void *)USB::rxBuffer, buf + first, len - first);
 
-  USB::rx_head = (USB::rx_head + len) & (USB_RX_BUFFER_SIZE - 1);
+  USB::rxHead = (USB::rxHead + len) & (USB::RX_BUFFER_SIZE - 1);
 }
 
 void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue) {
@@ -226,8 +227,48 @@ void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue) {
   usbd_register_control_callback(usbd_dev, USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE,
                                  USB_REQ_TYPE_TYPE | USB_REQ_TYPE_RECIPIENT, cdcacm_control_request);
 }
+#endif
+
+size_t USB::recv(char *dst, size_t len) {
+#if COMM == 2
+  size_t read = 0;
+  while (read < len) {
+    while (rxHead == rxTail)
+      Scheduler::yield();
+
+    uint16_t available = (rxHead - rxTail) & (RX_BUFFER_SIZE - 1);
+    uint16_t to_read = (len - read > available) ? available : len - read;
+    MM::copyFromCirc(dst + read, (const void *)rxBuffer, RX_BUFFER_SIZE, rxTail, to_read);
+    rxTail = (rxTail + to_read) & (RX_BUFFER_SIZE - 1);
+    read += to_read;
+  }
+  return read;
+#else
+  (void)dst;
+  (void)len;
+  return -1;
+#endif
+}
+
+size_t USB::send(const char *src, size_t len) {
+#if COMM == 2
+  size_t sent = 0;
+  while (sent < len) {
+    int chunk = (len - sent > 64) ? 64 : (len - sent);
+    while (usbd_ep_write_packet(USB::usbd_dev, 0x82, src + sent, chunk) == 0)
+      ;
+    sent += chunk;
+  }
+  return sent;
+#else
+  (void)src;
+  (void)len;
+  return -1;
+#endif
+}
 
 void USB::init() {
+#if COMM == 2
   rcc_periph_clock_enable(RCC_OTGFS);
   gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11 | GPIO12);
   gpio_set_af(GPIOA, GPIO_AF10, GPIO11 | GPIO12);
@@ -238,6 +279,9 @@ void USB::init() {
 
   // Disable VBUS sensing cuz board dont have it
   OTG_FS_GCCFG |= OTG_GCCFG_NOVBUSSENS | OTG_GCCFG_PWRDWN;
+#endif
 }
 
+#if COMM == 2
 extern "C" void otg_fs_isr(void) { usbd_poll(USB::usbd_dev); }
+#endif

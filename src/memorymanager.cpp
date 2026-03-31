@@ -1,5 +1,7 @@
 #include "memorymanager.hpp"
 
+#include <libopencm3/cm3/cortex.h>
+
 void *const MM::HEAP_START = reinterpret_cast<void *>((reinterpret_cast<uint32_t>(&end) + 3) & ~3);
 const uint32_t MM::HEAP_SIZE =
     reinterpret_cast<uint32_t>(&_stack) - STACK_RESERVED - reinterpret_cast<uint32_t>(HEAP_START);
@@ -12,6 +14,7 @@ void MM::init() {
 }
 
 void *MM::malloc(size_t size) {
+  cm_disable_interrupts();
   size = (size + 3) & ~3; // 4-byte align
 
   Arena *candidate = reinterpret_cast<Arena *>(HEAP_START);
@@ -19,6 +22,7 @@ void *MM::malloc(size_t size) {
   // First allocation
   if (candidate->allocated == 0) {
     candidate->allocated = size;
+    cm_enable_interrupts();
     return reinterpret_cast<void *>(reinterpret_cast<uint32_t>(candidate) + sizeof(Arena));
   }
 
@@ -35,8 +39,10 @@ void *MM::malloc(size_t size) {
       break;
   };
 
-  if (reinterpret_cast<uint32_t>(candidate->next) - curEnd < size)
+  if (reinterpret_cast<uint32_t>(candidate->next) - curEnd < size) {
+    cm_enable_interrupts();
     return nullptr; // Out of memory
+  }
 
   // Insert new arena block
   Arena *newArena = reinterpret_cast<Arena *>(curEnd);
@@ -47,6 +53,7 @@ void *MM::malloc(size_t size) {
   newArena->prev = candidate;
   candidate->next = newArena;
 
+  cm_enable_interrupts();
   return reinterpret_cast<void *>(reinterpret_cast<uint32_t>(newArena) + sizeof(Arena));
 }
 
@@ -101,6 +108,28 @@ void *MM::realloc(void *p, size_t size) {
   free(p);
 
   return np;
+}
+
+size_t MM::copyToCirc(void *circBuf, size_t bufSize, size_t head, const void *src, size_t len) {
+  size_t first = bufSize - head;
+  if (len <= first) {
+    MM::memcpy((uint8_t *)circBuf + head, src, len);
+  } else {
+    MM::memcpy((uint8_t *)circBuf + head, src, first);
+    MM::memcpy(circBuf, (const uint8_t *)src + first, len - first);
+  }
+  return len;
+}
+
+size_t MM::copyFromCirc(void *dst, const void *circBuf, size_t bufSize, size_t tail, size_t len) {
+  size_t first = bufSize - tail;
+  if (len <= first) {
+    MM::memcpy(dst, (const uint8_t *)circBuf + tail, len);
+  } else {
+    MM::memcpy(dst, (const uint8_t *)circBuf + tail, first);
+    MM::memcpy((uint8_t *)dst + first, circBuf, len - first);
+  }
+  return len;
 }
 
 // C linkage wrappers for newlib

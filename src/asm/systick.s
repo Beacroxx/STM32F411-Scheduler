@@ -26,15 +26,18 @@ _ZN7SysTick8delayCycEm:
 .type sys_tick_handler, %function
 
 sys_tick_handler:
-    PUSH {LR}
-    BL _ZN9Scheduler5yieldEv
+  PUSH {LR}
 
-    LDR r0, =_ZN7SysTick2msE
-    LDR r1, [r0]
-    LDR r2, [r0, #4]
-    ADDS r1, r1, #1
-    ADC r2, r2, #0
-    STR r1, [r0]
-    STR r2, [r0, #4]
+  CPSID I
+  LDR r0, =_ZN7SysTick2msE
+  LDR r1, [r0]
+  LDR r2, [r0, #4]
+  ADDS r1, r1, #1
+  ADC r2, r2, #0
+  STR r1, [r0]
+  STR r2, [r0, #4]
+  CPSIE I
 
-    POP {PC}
+  BL _ZN9Scheduler5yieldEv
+
+  POP {PC}

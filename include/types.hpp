@@ -1,5 +1,7 @@
 #pragma once
 
+#include "memorymanager.hpp"
+
 #include <cmath>
 #include <cstdint>
 
@@ -13,7 +15,8 @@ struct i16f16_t {
 
   i16f16_t() = default;
   constexpr explicit i16f16_t(int32_t v) : value(static_cast<int32_t>(static_cast<int64_t>(v) * 65536)) {}
-  constexpr explicit i16f16_t(const float v) : value(static_cast<int32_t>(v * 65536.0f)) {}
+  consteval explicit i16f16_t(const float v) : value(static_cast<int32_t>(v * 65536.0f)) {}
+  consteval explicit i16f16_t(const double v) : value(static_cast<int32_t>(v * 65536.0f)) {}
   constexpr i16f16_t(int v) : value(static_cast<int32_t>(static_cast<int64_t>(v) * 65536)) {}
   constexpr i16f16_t(int16_t v) : value(static_cast<int32_t>(static_cast<int64_t>(v) * 65536)) {}
   constexpr i16f16_t(uint16_t v) : value(static_cast<int32_t>(static_cast<int64_t>(v) * 65536)) {}
@@ -522,4 +525,113 @@ struct fmtStr {
 };
 
 template <typename T> constexpr bool isSignedV = T(-1) < T(0);
+
+template <typename T, size_t N> struct array {
+  T arr[N];
+  template <typename... Ts>
+    requires(sizeof...(Ts) == N)
+  constexpr array(Ts &&...ts) : arr {ts...} {}
+  constexpr array() = default;
+  constexpr size_t size() const { return N; }
+
+  constexpr T &operator[](size_t i) { return arr[i]; }
+  constexpr T const &operator[](size_t i) const { return arr[i]; }
+
+  constexpr T *begin() { return arr; }
+  constexpr T *end() { return arr + N; }
+};
+
+template <typename T> struct vector {
+  T *data = nullptr;
+  size_t __capacity = 0;
+  size_t __size = 0;
+
+  vector() = default;
+  ~vector() {
+    if (data)
+      MM::free(data);
+  }
+
+  vector(const vector &) = delete;
+  vector &operator=(const vector &) = delete;
+
+  vector(vector &&other) noexcept : data(other.data), __capacity(other.__capacity), __size(other.__size) {
+    other.data = nullptr;
+    other.__capacity = 0;
+    other.__size = 0;
+  }
+
+  vector &operator=(vector &&other) noexcept {
+    if (this == &other)
+      return *this;
+
+    if (data)
+      MM::free(data);
+
+    data = other.data;
+    __capacity = other.__capacity;
+    __size = other.__size;
+    other.data = nullptr;
+    other.__capacity = 0;
+    other.__size = 0;
+
+    return *this;
+  }
+
+  void reserve(size_t size) {
+    if (size <= __size)
+      return;
+
+    T *newData = static_cast<T *>(MM::realloc(data, size * sizeof(T)));
+    if (!newData)
+      return;
+
+    data = newData;
+    __capacity = size;
+  }
+
+  void pushBack(const T &value) {
+    if (__size == __capacity)
+      reserve(__capacity == 0 ? 8 : __capacity * 2);
+
+    data[__size++] = value;
+  }
+
+  void pushBack(T &&value) {
+    if (__size == __capacity)
+      reserve(__capacity == 0 ? 8 : __capacity * 2);
+
+    data[__size++] = std::move(value);
+  }
+
+  void popBack() {
+    if (!empty())
+      --__size;
+  }
+
+  T &operator[](size_t i) { return data[i]; }
+  T const &operator[](size_t i) const { return data[i]; }
+
+  T *begin() { return data; }
+  T *end() { return data + __size; }
+
+  T const *begin() const { return data; }
+  T const *end() const { return data + __size; }
+
+  size_t size() const { return __size; }
+  size_t capacity() const { return __capacity; }
+  bool empty() const { return __size == 0; }
+  void clear() { __size = 0; }
+
+  void shrinkToFit() {
+    if (__size == __capacity || __size == 0) {
+      return;
+    }
+    T *newData = static_cast<T *>(MM::realloc(data, __size * sizeof(T)));
+    if (newData) {
+      data = newData;
+      __capacity = __size;
+    }
+  }
+};
 } // namespace Util

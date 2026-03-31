@@ -4,6 +4,7 @@
 #include "memorymanager.hpp"
 #include "systick.hpp"
 
+#include <libopencm3/cm3/cortex.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 
@@ -51,7 +52,8 @@ void SH1106::begin() {
 }
 
 void SH1106::update() {
-  for (int32_t p = 7; p >= 0; p--) {
+  for (int32_t p = 0; p != 8; p++) {
+    cm_disable_interrupts();
     begin();
     send(COMMAND | SINGLE);
     send(0xB0 | p);
@@ -60,11 +62,10 @@ void SH1106::update() {
     send(COMMAND | SINGLE);
     send(0x10);
     send(DATA | MULTI);
-    uint32_t i = 127;
-    do
+    for (int32_t i = 127; i >= 0; i--)
       send(buf[i] >> (p * 8));
-    while (i--);
     stop();
+    cm_enable_interrupts();
   }
 }
 
@@ -79,7 +80,7 @@ void SH1106::init() {
   uint32_t i = 0;
   do
     send(init_seq[i]);
-  while (i++ < sizeof(init_seq));
+  while (++i < sizeof(init_seq));
   stop();
 
   clear();

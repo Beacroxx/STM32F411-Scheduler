@@ -10,11 +10,16 @@
 #include "spi.hpp"
 #include "systick.hpp"
 #include "trig.hpp"
+#include "uart.hpp"
 #include "usb.hpp"
 
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
+
+#if COMM != 1 && COMM != 2
+#error "Define COMM: 1=UART, 2=USB"
+#endif
 
 void test() {
   gpio_toggle(GPIOC, GPIO13);
@@ -35,7 +40,7 @@ void test2() {
 constexpr i16f16_t RADIUS = i16f16_t(15);
 
 // Vertices of a centered icosahedron with configurable radius
-constexpr Vec3 vtx[12] = {
+constexpr Util::array<Vec3, 12> vtxs = {
   Vec3(-RADIUS,  F_CONST::PHI * RADIUS, 0),
   Vec3( RADIUS,  F_CONST::PHI * RADIUS, 0),
   Vec3(-RADIUS, -F_CONST::PHI * RADIUS, 0),
@@ -51,30 +56,30 @@ constexpr Vec3 vtx[12] = {
 };
 
 // Icosahedron faces (counter-clockwise winding)
-constexpr Tri3 icosahedron[] = {
-  Tri3(vtx[0], vtx[11], vtx[5]),
-  Tri3(vtx[0], vtx[5], vtx[1]),
-  Tri3(vtx[0], vtx[1], vtx[7]),
-  Tri3(vtx[0], vtx[7], vtx[10]),
-  Tri3(vtx[0], vtx[10], vtx[11]),
+constexpr Util::array<Tri3, 20> tris = {
+  Tri3(vtxs[0], vtxs[11], vtxs[5]),
+  Tri3(vtxs[0], vtxs[5], vtxs[1]),
+  Tri3(vtxs[0], vtxs[1], vtxs[7]),
+  Tri3(vtxs[0], vtxs[7], vtxs[10]),
+  Tri3(vtxs[0], vtxs[10], vtxs[11]),
 
-  Tri3(vtx[1], vtx[5], vtx[9]),
-  Tri3(vtx[5], vtx[11], vtx[4]),
-  Tri3(vtx[11], vtx[10], vtx[2]),
-  Tri3(vtx[10], vtx[7], vtx[6]),
-  Tri3(vtx[7], vtx[1], vtx[8]),
+  Tri3(vtxs[1], vtxs[5], vtxs[9]),
+  Tri3(vtxs[5], vtxs[11], vtxs[4]),
+  Tri3(vtxs[11], vtxs[10], vtxs[2]),
+  Tri3(vtxs[10], vtxs[7], vtxs[6]),
+  Tri3(vtxs[7], vtxs[1], vtxs[8]),
 
-  Tri3(vtx[3], vtx[9], vtx[4]),
-  Tri3(vtx[3], vtx[4], vtx[2]),
-  Tri3(vtx[3], vtx[2], vtx[6]),
-  Tri3(vtx[3], vtx[6], vtx[8]),
-  Tri3(vtx[3], vtx[8], vtx[9]),
+  Tri3(vtxs[3], vtxs[9], vtxs[4]),
+  Tri3(vtxs[3], vtxs[4], vtxs[2]),
+  Tri3(vtxs[3], vtxs[2], vtxs[6]),
+  Tri3(vtxs[3], vtxs[6], vtxs[8]),
+  Tri3(vtxs[3], vtxs[8], vtxs[9]),
 
-  Tri3(vtx[4], vtx[9], vtx[5]),
-  Tri3(vtx[2], vtx[4], vtx[11]),
-  Tri3(vtx[6], vtx[2], vtx[10]),
-  Tri3(vtx[8], vtx[6], vtx[7]),
-  Tri3(vtx[9], vtx[8], vtx[1])
+  Tri3(vtxs[4], vtxs[9], vtxs[5]),
+  Tri3(vtxs[2], vtxs[4], vtxs[11]),
+  Tri3(vtxs[6], vtxs[2], vtxs[10]),
+  Tri3(vtxs[8], vtxs[6], vtxs[7]),
+  Tri3(vtxs[9], vtxs[8], vtxs[1])
 };
 
 // clang-format on
@@ -102,20 +107,14 @@ void test3() {
     Trig::sin(Vec3(angle, angle2, 0), sin);
     Trig::cos(Vec3(angle, angle2, 0), cos);
 
-    for (uint32_t i = 0; i < sizeof(icosahedron) / sizeof(Tri3); i++) {
-      MM::memcpy(&tri3D, &icosahedron[i], sizeof(Tri3));
+    for (uint32_t i = 0; i < sizeof(tris) / sizeof(Tri3); i++) {
+      MM::memcpy(&tri3D, &tris[i], sizeof(Tri3));
       Math3D::rotate(tri3D, sin, cos);
       if (Math3D::project(tri3D, tri2D)) {
         if (tri2D.area() < 0) {
           SH1106::drawTriangle(tri2D);
         }
       }
-    }
-
-    printf("Angle: {}\n", angle * RAD_CONV);
-
-    for (uint32_t i = 0; i < 64; i++) {
-      SH1106::buf[i] = ~SH1106::buf[i];
     }
 
     angle = angle > F_CONST::TWOPI ? (angle + INCR1) % F_CONST::TWOPI : angle + INCR1;
@@ -136,6 +135,9 @@ int main() {
   // Setup systick
   SysTick::init();
 
+  // Setup malloc
+  MM::init();
+
   // Enable GPIO clocks
   rcc_periph_clock_enable(RCC_GPIOA);
   rcc_periph_clock_enable(RCC_GPIOB);
@@ -145,11 +147,13 @@ int main() {
   gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
   gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO13);
 
-  // Setup malloc
-  MM::init();
-
+#if COMM == 1
+  // Init Uart
+  UART::init();
+#elif COMM == 2
   // Init USB
   USB::init();
+#endif
 
   // Init SPI
   SPI::init();
