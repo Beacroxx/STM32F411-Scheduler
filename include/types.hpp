@@ -634,4 +634,44 @@ template <typename T> struct vector {
     }
   }
 };
+
+template <size_t N> struct circBuffer {
+  static_assert((N & (N - 1)) == 0, "N must be power of two");
+
+  volatile uint8_t buf[N];
+  volatile uint16_t head = 0;
+  volatile uint16_t tail = 0;
+
+  inline bool full() const { return ((head + 1) & (N - 1)) == tail; }
+  inline bool empty() const { return head == tail; }
+  inline uint16_t available() const { return (head - tail) & (N - 1); }
+  inline uint16_t freeSpace() const { return (tail - head - 1) & (N - 1); }
+
+  inline void append(uint8_t c) {
+    buf[head] = c;
+    head = (head + 1) & (N - 1);
+  }
+
+  inline uint8_t pop() {
+    uint8_t c = buf[tail];
+    tail = (tail + 1) & (N - 1);
+    return c;
+  }
+
+  inline size_t copyOut(char *dst, size_t len) {
+    uint16_t avail = available();
+    uint16_t toRead = (len > avail) ? avail : len;
+    MM::copyFromCirc(dst, (const void *)buf, N, tail, toRead);
+    tail = (tail + toRead) & (N - 1);
+    return toRead;
+  }
+
+  inline size_t copyIn(const char *src, size_t len) {
+    uint16_t free = freeSpace();
+    uint16_t toWrite = (len > free) ? free : len;
+    MM::copyToCirc((void *)buf, N, head, src, toWrite);
+    head = (head + toWrite) & (N - 1);
+    return toWrite;
+  }
+};
 } // namespace Util

@@ -12,9 +12,7 @@
 usbd_device *USB::usbd_dev;
 uint8_t USB::control_buffer[128];
 
-volatile uint8_t USB::rxBuffer[RX_BUFFER_SIZE];
-volatile uint16_t USB::rxHead = 0;
-volatile uint16_t USB::rxTail = 0;
+Util::circBuffer<USB::RX_BUFFER_SIZE> USB::rx;
 
 const usb_device_descriptor dev = {
     .bLength = USB_DT_DEVICE_SIZE,
@@ -205,16 +203,11 @@ void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t) {
   while (usbd_ep_write_packet(usbd_dev, 0x82, buf, len) == 0)
     ;
 
-  uint16_t space = (USB::RX_BUFFER_SIZE + USB::rxTail - USB::rxHead - 1) & (USB::RX_BUFFER_SIZE - 1);
+  uint16_t space = USB::rx.freeSpace();
   if (len > space)
     len = space;
 
-  uint16_t first = (USB::RX_BUFFER_SIZE - USB::rxHead > len) ? len : USB::RX_BUFFER_SIZE - USB::rxHead;
-  MM::memcpy((void *)&USB::rxBuffer[USB::rxHead], buf, first);
-  if (len > first)
-    MM::memcpy((void *)USB::rxBuffer, buf + first, len - first);
-
-  USB::rxHead = (USB::rxHead + len) & (USB::RX_BUFFER_SIZE - 1);
+  USB::rx.copyIn(buf, len);
 }
 
 void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue) {
@@ -233,14 +226,10 @@ size_t USB::recv(char *dst, size_t len) {
 #if COMM == 2
   size_t read = 0;
   while (read < len) {
-    while (rxHead == rxTail)
+    while (USB::rx.empty())
       Scheduler::yield();
 
-    uint16_t available = (rxHead - rxTail) & (RX_BUFFER_SIZE - 1);
-    uint16_t to_read = (len - read > available) ? available : len - read;
-    MM::copyFromCirc(dst + read, (const void *)rxBuffer, RX_BUFFER_SIZE, rxTail, to_read);
-    rxTail = (rxTail + to_read) & (RX_BUFFER_SIZE - 1);
-    read += to_read;
+    read += USB::rx.copyOut(dst + read, len - read);
   }
   return read;
 #else

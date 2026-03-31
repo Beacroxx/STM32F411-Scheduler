@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include "types.hpp"
 #include <libopencm3/usb/cdc.h>
 #include <libopencm3/usb/usbd.h>
 
@@ -13,17 +14,9 @@ constexpr size_t RX_BUFFER_SIZE = 512;
  */
 extern uint8_t control_buffer[128];
 /**
- * @brief USB receive buffer for incoming data.
+ * @brief USB receive circular buffer for incoming data.
  */
-extern volatile uint8_t rxBuffer[RX_BUFFER_SIZE];
-/**
- * @brief Head index for the USB receive buffer.
- */
-extern volatile uint16_t rxHead;
-/**
- * @brief Tail index for the USB receive buffer.
- */
-extern volatile uint16_t rxTail;
+extern Util::circBuffer<RX_BUFFER_SIZE> rx;
 /**
  * @brief USB string descriptors array.
  */

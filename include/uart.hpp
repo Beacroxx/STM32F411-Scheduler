@@ -1,5 +1,7 @@
 #pragma once
 
+#include "types.hpp"
+
 #include <cstddef>
 #include <cstdint>
 
@@ -8,39 +10,28 @@ namespace UART {
 constexpr size_t BUFFER_SIZE = 512;
 
 /**
- * @brief UART receive buffer for incoming data.
+ * @brief UART receive circular buffer for incoming data.
  */
-extern volatile uint8_t rxBuffer[BUFFER_SIZE];
-/**
- * @brief Head index for the UART receive buffer.
- */
-extern volatile uint16_t rxHead;
-/**
- * @brief Tail index for the UART receive buffer.
- */
-extern volatile uint16_t rxTail;
+extern Util::circBuffer<BUFFER_SIZE> rx;
 
 /**
- * @brief UART transmit buffer for incoming data.
+ * @brief UART transmit circular buffer for outgoing data.
  */
-extern volatile uint8_t txBuffer[BUFFER_SIZE];
-/**
- * @brief Head index for the UART transmit buffer.
- */
-extern volatile uint16_t txHead;
-/**
- * @brief Tail index for the UART transmit buffer.
- */
-extern volatile uint16_t txTail;
+extern Util::circBuffer<BUFFER_SIZE> tx;
 #endif
 
 /**
- * @brief Initialize the UART peripheral and buffers.
+ * @brief Flag to enable and disable echoing
+ */
+extern bool echo;
+
+/**
+ * @brief Initialize the UART peripheral.
  */
 void init();
 
 /**
- * @brief Receive data from the UART buffer.
+ * @brief Receive data from the UART rx buffer.
  * @param dst Destination buffer to store received data.
  * @param len Maximum number of bytes to receive.
  * @return Number of bytes actually received.
@@ -48,7 +39,7 @@ void init();
 size_t recv(char *dst, size_t len);
 
 /**
- * @brief Send data using the UART transmit buffer.
+ * @brief Send data using the UART tx buffer.
  * @param src Source buffer containing data to send.
  * @param len Number of bytes to send.
  * @return Number of bytes actually sent.

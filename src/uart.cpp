@@ -10,32 +10,39 @@
 
 #if COMM == 1
 
-volatile uint8_t UART::rxBuffer[BUFFER_SIZE];
-volatile uint16_t UART::rxHead = 0;
-volatile uint16_t UART::rxTail = 0;
+Util::circBuffer<UART::BUFFER_SIZE> UART::rx;
+Util::circBuffer<UART::BUFFER_SIZE> UART::tx;
 
-volatile uint8_t UART::txBuffer[BUFFER_SIZE];
-volatile uint16_t UART::txHead = 0;
-volatile uint16_t UART::txTail = 0;
+bool UART::echo = true;
+
+static inline void handleRxNotEmpty(char c) {
+  using namespace UART;
+  if (rx.full())
+    return;
+
+  rx.append(c);
+  if (!echo)
+    return;
+
+  tx.append(c);
+  usart_enable_tx_interrupt(USART2);
+}
+
+static inline void handleTxEmpty() {
+  using namespace UART;
+  if (tx.empty()) {
+    usart_disable_tx_interrupt(USART2);
+    return;
+  }
+
+  usart_send(USART2, tx.pop());
+}
 
 extern "C" void usart2_isr() {
-  using namespace UART;
-  if (usart_get_flag(USART2, USART_SR_RXNE)) {
-    char c = usart_recv(USART2);
-    usart_send(USART2, c);
-
-    rxBuffer[rxHead] = c;
-    rxHead = (rxHead + 1) & (BUFFER_SIZE - 1);
-  }
-
-  if (usart_get_flag(USART2, USART_SR_TXE)) {
-    if (txTail != txHead) {
-      usart_send(USART2, txBuffer[txTail]);
-      txTail = (txTail + 1) & (BUFFER_SIZE - 1);
-    } else {
-      usart_disable_tx_interrupt(USART2);
-    }
-  }
+  if (usart_get_flag(USART2, USART_SR_RXNE))
+    handleRxNotEmpty(usart_recv(USART2));
+  if (usart_get_flag(USART2, USART_SR_TXE))
+    handleTxEmpty();
 }
 
 #endif
@@ -44,14 +51,10 @@ size_t UART::recv(char *dst, size_t len) {
 #if COMM == 1
   size_t read = 0;
   while (read < len) {
-    while (rxHead == rxTail)
+    while (rx.empty())
       Scheduler::yield();
 
-    uint16_t available = (rxHead - rxTail) & (BUFFER_SIZE - 1);
-    uint16_t toRead = (len - read > available) ? available : len - read;
-    MM::copyFromCirc(dst + read, (const void *)rxBuffer, BUFFER_SIZE, rxTail, toRead);
-    rxTail = (rxTail + toRead) & (BUFFER_SIZE - 1);
-    read += toRead;
+    read += rx.copyOut(dst + read, len - read);
   }
   return read;
 #else
@@ -65,15 +68,11 @@ size_t UART::send(const char *src, size_t len) {
 #if COMM == 1
   size_t sent = 0;
   while (sent < len) {
-    while (((txHead + 1) & (BUFFER_SIZE - 1)) == txTail)
+    while (tx.full())
       Scheduler::yield();
 
-    uint16_t available = (txTail - txHead - 1) & (BUFFER_SIZE - 1);
-    uint16_t toWrite = (len - sent > available) ? available : len - sent;
-    bool startTx = (txHead == txTail);
-    MM::copyToCirc((void *)txBuffer, BUFFER_SIZE, txHead, src + sent, toWrite);
-    txHead = (txHead + toWrite) & (BUFFER_SIZE - 1);
-    sent += toWrite;
+    bool startTx = tx.empty();
+    sent += tx.copyIn(src + sent, len - sent);
 
     if (startTx)
       usart_enable_tx_interrupt(USART2);
