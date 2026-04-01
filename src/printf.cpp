@@ -129,7 +129,7 @@ int __sprintfImpl(const Util::fmtStr &fmt, char *dst, Util::fmtArg *args, size_t
   size_t argIdx = 0;
   char modifier = '\0';
   for (size_t i = 0; i < fmt.size; i++) {
-    if (i + 2 >= fmt.size || fmt[i] != '{' || (fmt[i + 1] != '}' && fmt[i + 2] != '}')) {
+    if (i + 1 >= fmt.size || fmt[i] != '{' || (fmt[i + 1] != '}' && (i + 2 >= fmt.size && fmt[i + 2] != '}'))) {
       *dst++ = fmt[i];
       continue;
     }
@@ -212,7 +212,7 @@ int __printfImpl(const Util::fmtStr &fmt, Util::fmtArg *args, size_t n) {
   size_t argIdx = 0;
   char modifier = '\0';
   for (size_t i = 0; i < fmt.size; i++) {
-    if (i + 2 >= fmt.size || fmt[i] != '{' || (fmt[i + 1] != '}' && fmt[i + 2] != '}')) {
+    if (i + 1 >= fmt.size || fmt[i] != '{' || (fmt[i + 1] != '}' && (i + 2 >= fmt.size && fmt[i + 2] != '}'))) {
       total++;
       continue;
     }

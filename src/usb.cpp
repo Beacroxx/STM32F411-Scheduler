@@ -195,6 +195,7 @@ enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_dev, usb
 }
 
 void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t) {
+  using namespace USB;
   static char buf[64];
   uint16_t len = usbd_ep_read_packet(usbd_dev, 0x01, buf, 64);
   if (!len)
@@ -203,11 +204,11 @@ void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t) {
   while (usbd_ep_write_packet(usbd_dev, 0x82, buf, len) == 0)
     ;
 
-  uint16_t space = USB::rx.freeSpace();
+  uint16_t space = rx.freeSpace();
   if (len > space)
     len = space;
 
-  USB::rx.copyIn(buf, len);
+  rx.copyIn(buf, len);
 }
 
 void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue) {
@@ -226,10 +227,10 @@ size_t USB::recv(char *dst, size_t len) {
 #if COMM == 2
   size_t read = 0;
   while (read < len) {
-    while (USB::rx.empty())
+    while (rx.empty())
       Scheduler::yield();
 
-    read += USB::rx.copyOut(dst + read, len - read);
+    read += rx.copyOut(dst + read, len - read);
   }
   return read;
 #else
@@ -244,7 +245,7 @@ size_t USB::send(const char *src, size_t len) {
   size_t sent = 0;
   while (sent < len) {
     int chunk = (len - sent > 64) ? 64 : (len - sent);
-    while (usbd_ep_write_packet(USB::usbd_dev, 0x82, src + sent, chunk) == 0)
+    while (usbd_ep_write_packet(usbd_dev, 0x82, src + sent, chunk) == 0)
       ;
     sent += chunk;
   }

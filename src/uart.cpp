@@ -17,11 +17,7 @@ bool UART::echo = true;
 
 static inline void handleRxNotEmpty(char c) {
   using namespace UART;
-  if (rx.full())
-    return;
-
-  rx.append(c);
-  if (!echo)
+  if (!rx.append(c) || !echo)
     return;
 
   tx.append(c);
@@ -30,12 +26,13 @@ static inline void handleRxNotEmpty(char c) {
 
 static inline void handleTxEmpty() {
   using namespace UART;
-  if (tx.empty()) {
+  static char c;
+  if (!tx.pop(c)) {
     usart_disable_tx_interrupt(USART2);
     return;
   }
 
-  usart_send(USART2, tx.pop());
+  usart_send(USART2, c);
 }
 
 extern "C" void usart2_isr() {

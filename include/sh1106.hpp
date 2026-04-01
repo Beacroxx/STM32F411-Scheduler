@@ -19,6 +19,42 @@ constexpr uint32_t PORT = GPIOB;
 constexpr uint32_t SCL = GPIO8;
 constexpr uint32_t SDA = GPIO9;
 
+namespace CMD {
+constexpr uint8_t SET_DISPLAY_OFF = 0xAE;
+constexpr uint8_t SET_DISPLAY_ON = 0xAF;
+constexpr uint8_t SET_DISPLAY_CLOCK_DIVIDE = 0xD5;
+constexpr uint8_t SET_MULTIPLEX_RATIO = 0xA8;
+constexpr uint8_t SET_DISPLAY_OFFSET = 0xD3;
+constexpr uint8_t SET_DISPLAY_START_LINE = 0x40;
+constexpr uint8_t ENABLE_CHARGE_PUMP = 0x8D;
+constexpr uint8_t SET_MEMORY_ADDRESSING_MODE = 0x20;
+constexpr uint8_t SET_SEGMENT_REMAP = 0xA0;
+constexpr uint8_t SET_SEGMENT_REMAP_REVERSE = 0xA1;
+constexpr uint8_t SET_COM_OUTPUT_SCAN_DIRECTION_NORMAL = 0xC0;
+constexpr uint8_t SET_COM_OUTPUT_SCAN_DIRECTION_REMAP = 0xC8;
+constexpr uint8_t SET_COM_PINS_HARDWARE_CONFIGURATION = 0xDA;
+constexpr uint8_t SET_CONTRAST_CONTROL = 0x81;
+constexpr uint8_t SET_PRECHARGE_PERIOD = 0xD9;
+constexpr uint8_t SET_VCOMH_DESELECT_LEVEL = 0xDB;
+constexpr uint8_t DISPLAY_FOLLOW_RAM = 0xA4;
+constexpr uint8_t NORMAL_DISPLAY = 0xA6;
+constexpr uint8_t INVERT_DISPLAY = 0xA7;
+constexpr uint8_t SET_PAGE_ADDRESS_BASE = 0xB0;
+constexpr uint8_t SET_COLUMN_LOW = 0x00;
+constexpr uint8_t SET_COLUMN_HIGH = 0x10;
+} // namespace CMD
+
+enum class Mode {
+  NORMAL,
+  INVERTED,
+  FLIP_H,     // Horizontal mirror (segment remap)
+  FLIP_V,     // Vertical mirror (COM scan direction)
+  ROTATE_180, // Equivalent to FLIP_H + FLIP_V
+  DIM,        // Lower contrast
+  OFF,        // Display off
+  ON,         // Display on
+};
+
 /**
  * @brief Display buffer.
  */
@@ -59,6 +95,12 @@ void stop();
  * @brief Begin communication with the display.
  */
 void begin();
+
+/**
+ * @brief Switch between modes
+ * @param mode The mode to switch to
+ */
+void setMode(Mode mode);
 
 /**
  * @brief Draw a pixel at the given position.

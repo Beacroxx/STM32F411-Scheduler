@@ -636,41 +636,49 @@ template <typename T> struct vector {
 };
 
 template <size_t N> struct circBuffer {
-  static_assert((N & (N - 1)) == 0, "N must be power of two");
+  static constexpr uint32_t MASK = N - 1;
+  static_assert((N & MASK) == 0, "N must be power of two");
 
-  volatile uint8_t buf[N];
-  volatile uint16_t head = 0;
-  volatile uint16_t tail = 0;
+  volatile char buf[N];
+  volatile uint32_t head = 0;
+  volatile uint32_t tail = 0;
 
-  inline bool full() const { return ((head + 1) & (N - 1)) == tail; }
+  inline bool full() const { return ((head + 1) & MASK) == tail; }
   inline bool empty() const { return head == tail; }
-  inline uint16_t available() const { return (head - tail) & (N - 1); }
-  inline uint16_t freeSpace() const { return (tail - head - 1) & (N - 1); }
+  inline uint32_t available() const { return (head - tail) & MASK; }
+  inline uint32_t freeSpace() const { return (tail - head - 1) & MASK; }
 
-  inline void append(uint8_t c) {
+  inline bool append(char c) {
+    if (full())
+      return false;
+
     buf[head] = c;
-    head = (head + 1) & (N - 1);
+    head = (head + 1) & MASK;
+    return true;
   }
 
-  inline uint8_t pop() {
-    uint8_t c = buf[tail];
-    tail = (tail + 1) & (N - 1);
-    return c;
+  inline bool pop(char &c) {
+    if (empty())
+      return false;
+
+    c = buf[tail];
+    tail = (tail + 1) & MASK;
+    return true;
   }
 
   inline size_t copyOut(char *dst, size_t len) {
-    uint16_t avail = available();
-    uint16_t toRead = (len > avail) ? avail : len;
+    uint32_t avail = available();
+    uint32_t toRead = (len > avail) ? avail : len;
     MM::copyFromCirc(dst, (const void *)buf, N, tail, toRead);
-    tail = (tail + toRead) & (N - 1);
+    tail = (tail + toRead) & MASK;
     return toRead;
   }
 
   inline size_t copyIn(const char *src, size_t len) {
-    uint16_t free = freeSpace();
-    uint16_t toWrite = (len > free) ? free : len;
+    uint32_t free = freeSpace();
+    uint32_t toWrite = (len > free) ? free : len;
     MM::copyToCirc((void *)buf, N, head, src, toWrite);
-    head = (head + toWrite) & (N - 1);
+    head = (head + toWrite) & MASK;
     return toWrite;
   }
 };

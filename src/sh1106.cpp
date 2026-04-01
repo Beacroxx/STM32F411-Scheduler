@@ -10,24 +10,26 @@
 
 uint64_t SH1106::buf[WIDTH];
 
+// clang-format off
 const uint8_t SH1106::init_seq[] = {
-    0xAE,       // Display off
-    0xD5, 0xF0, // Set display clock divide ratio/oscillator frequency
-    0xA8, 0x3F, // Set multiplex ratio
-    0xD3, 0x00, // Set display offset
-    0x40,       // Set display start line
-    0x8D, 0x14, // Enable charge pump
-    0x20, 0x02, // Set memory addressing mode
-    0xA0,       // Set segment re-map
-    0xC8,       // Set COM output direction
-    0xDA, 0x12, // Set COM pins hardware configuration
-    0x81, 0xFF, // Set contrast control
-    0xD9, 0x11, // Set pre-charge period
-    0xDB, 0x20, // Set VCOMH deselect level (0.77 * Vcc)
-    0xA4,       // Display follows RAM content
-    0xA6,       // Normal display
-    0xAF,       // Display on
+  CMD::SET_DISPLAY_OFF,
+  CMD::SET_DISPLAY_CLOCK_DIVIDE, 0xF0,
+  CMD::SET_MULTIPLEX_RATIO, 0x3F,
+  CMD::SET_DISPLAY_OFFSET, 0x00,
+  CMD::SET_DISPLAY_START_LINE,
+  CMD::ENABLE_CHARGE_PUMP, 0x14,
+  CMD::SET_MEMORY_ADDRESSING_MODE, 0x02,
+  CMD::SET_SEGMENT_REMAP,
+  CMD::SET_COM_OUTPUT_SCAN_DIRECTION_REMAP,
+  CMD::SET_COM_PINS_HARDWARE_CONFIGURATION, 0x12,
+  CMD::SET_CONTRAST_CONTROL, 0xFF,
+  CMD::SET_PRECHARGE_PERIOD, 0x11,
+  CMD::SET_VCOMH_DESELECT_LEVEL, 0x20,
+  CMD::DISPLAY_FOLLOW_RAM,
+  CMD::NORMAL_DISPLAY,
+  CMD::SET_DISPLAY_ON,
 };
+// clang-format on
 
 void SH1106::send(uint8_t byte) {
   uint32_t i = 8;
@@ -56,11 +58,11 @@ void SH1106::update() {
     cm_disable_interrupts();
     begin();
     send(COMMAND | SINGLE);
-    send(0xB0 | p);
+    send(CMD::SET_PAGE_ADDRESS_BASE | p);
     send(COMMAND | SINGLE);
-    send(0x02);
+    send(CMD::SET_COLUMN_LOW | 0x02);
     send(COMMAND | SINGLE);
-    send(0x10);
+    send(CMD::SET_COLUMN_HIGH | 0x00);
     send(DATA | MULTI);
     for (int32_t i = 127; i >= 0; i--)
       send(buf[i] >> (p * 8));
@@ -250,4 +252,48 @@ void SH1106::drawText(const Vec2 &v, const char *s) {
     }
     x++;
   }
+}
+
+void SH1106::setMode(Mode mode) {
+  begin();
+  send(COMMAND | MULTI);
+  switch (mode) {
+  case Mode::NORMAL:
+    send(CMD::NORMAL_DISPLAY);
+    send(CMD::SET_SEGMENT_REMAP);
+    send(CMD::SET_COM_OUTPUT_SCAN_DIRECTION_REMAP);
+    send(CMD::SET_CONTRAST_CONTROL);
+    send(0xFF);
+    break;
+  case Mode::INVERTED:
+    send(CMD::INVERT_DISPLAY);
+    break;
+  case Mode::FLIP_H:
+    send(CMD::NORMAL_DISPLAY);
+    send(CMD::SET_SEGMENT_REMAP_REVERSE);
+    break;
+  case Mode::FLIP_V:
+    send(CMD::NORMAL_DISPLAY);
+    send(CMD::SET_COM_OUTPUT_SCAN_DIRECTION_NORMAL);
+    break;
+  case Mode::ROTATE_180:
+    send(CMD::NORMAL_DISPLAY);
+    send(CMD::SET_SEGMENT_REMAP_REVERSE);
+    send(CMD::SET_COM_OUTPUT_SCAN_DIRECTION_NORMAL);
+    break;
+  case Mode::DIM:
+    send(CMD::NORMAL_DISPLAY);
+    send(CMD::SET_CONTRAST_CONTROL);
+    send(0x40);
+    break;
+  case Mode::OFF:
+    send(CMD::SET_DISPLAY_OFF);
+    break;
+  case Mode::ON:
+    send(CMD::SET_DISPLAY_ON);
+    break;
+  default:
+    break;
+  }
+  stop();
 }

@@ -22,16 +22,17 @@
 #endif
 
 void test() {
-  gpio_toggle(GPIOC, GPIO13);
   SysTick::delayMs(1000);
   gpio_toggle(GPIOC, GPIO13);
-  SysTick::delayMs(1000);
 }
 
 void test2() {
   while (1) {
+#if 0
     gpio_toggle(GPIOC, GPIO13);
     SysTick::delayMs(500);
+#endif
+    Scheduler::yield();
   }
 }
 
@@ -86,7 +87,6 @@ constexpr Util::array<Tri3, 20> tris = {
 
 void test3() {
   SH1106::init();
-  SysTick::delayMs(1000);
 
   static i16f16_t angle = 0;
   static i16f16_t angle2 = 0;
