@@ -41,7 +41,7 @@ void test2() {
 constexpr i16f16_t RADIUS = i16f16_t(15);
 
 // Vertices of a centered icosahedron with configurable radius
-constexpr Util::array<Vec3, 12> vtxs = {
+constexpr Util::Array<Vec3, 12> vtxs = {
   Vec3(-RADIUS,  F_CONST::PHI * RADIUS, 0),
   Vec3( RADIUS,  F_CONST::PHI * RADIUS, 0),
   Vec3(-RADIUS, -F_CONST::PHI * RADIUS, 0),
@@ -57,7 +57,7 @@ constexpr Util::array<Vec3, 12> vtxs = {
 };
 
 // Icosahedron faces (counter-clockwise winding)
-constexpr Util::array<Tri3, 20> tris = {
+constexpr Util::Array<Tri3, 20> tris = {
   Tri3(vtxs[0], vtxs[11], vtxs[5]),
   Tri3(vtxs[0], vtxs[5], vtxs[1]),
   Tri3(vtxs[0], vtxs[1], vtxs[7]),

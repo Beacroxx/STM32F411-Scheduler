@@ -254,6 +254,14 @@ void SH1106::drawText(const Vec2 &v, const char *s) {
   }
 }
 
+void SH1106::drawCenteredText(const Rect2 &r, const char *s) {
+  uint32_t len = 0;
+  for (const char *c = s; *c; c++)
+    len++;
+
+  drawText(Vec2(r.xy.x + (r.wh.x / 2 - len / 2), r.xy.y + (r.wh.y / 2 - 2)), s);
+}
+
 void SH1106::setMode(Mode mode) {
   begin();
   send(COMMAND | MULTI);

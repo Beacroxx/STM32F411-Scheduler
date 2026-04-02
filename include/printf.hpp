@@ -2,10 +2,10 @@
 
 #include "types.hpp"
 
-int __printfImpl(const Util::fmtStr &fmt, Util::fmtArg *args, size_t n);
-int __sprintfImpl(const Util::fmtStr &fmt, char *dst, Util::fmtArg *args, size_t n);
+int __printfImpl(const Util::FmtStr &fmt, Util::fmtArg *args, size_t n);
+int __sprintfImpl(const Util::FmtStr &fmt, char *dst, Util::fmtArg *args, size_t n);
 
-template <typename... Args> int printf(const Util::fmtStr &fmt, const Args &...args) {
+template <typename... Args> int printf(const Util::FmtStr &fmt, const Args &...args) {
   Util::fmtArg argStore[] = {
       Util::fmtArg {Util::argTypeV<Args>, &args}
        ...
@@ -14,7 +14,7 @@ template <typename... Args> int printf(const Util::fmtStr &fmt, const Args &...a
   return __printfImpl(fmt, argStore, sizeof...(args));
 }
 
-template <typename... Args> int sprintf(const Util::fmtStr &fmt, char *dst, const Args &...args) {
+template <typename... Args> int sprintf(const Util::FmtStr &fmt, char *dst, const Args &...args) {
   Util::fmtArg argStore[] = {
       Util::fmtArg {Util::argTypeV<Args>, &args}
        ...

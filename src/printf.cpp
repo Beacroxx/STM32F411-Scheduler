@@ -124,7 +124,7 @@ template <> char *toBuf(char *buf, const char *s) {
   return buf + len;
 }
 
-int __sprintfImpl(const Util::fmtStr &fmt, char *dst, Util::fmtArg *args, size_t n) {
+int __sprintfImpl(const Util::FmtStr &fmt, char *dst, Util::fmtArg *args, size_t n) {
   char *orig = dst;
   size_t argIdx = 0;
   char modifier = '\0';
@@ -146,58 +146,58 @@ int __sprintfImpl(const Util::fmtStr &fmt, char *dst, Util::fmtArg *args, size_t
 
     const Util::fmtArg &arg = args[argIdx++];
     switch (arg.type) {
-    case Util::fmtType::INT8: {
+    case Util::FmtType::INT8: {
       int8_t v = *static_cast<const int8_t *>(arg.ptr);
       dst = modifier == 'X' ? hexToBuf(dst, v) : toBuf(dst, v);
       break;
     }
-    case Util::fmtType::UINT8: {
+    case Util::FmtType::UINT8: {
       uint8_t v = *static_cast<const uint8_t *>(arg.ptr);
       dst = modifier == 'X' ? hexToBuf(dst, v) : toBuf(dst, v);
       break;
     }
-    case Util::fmtType::INT16: {
+    case Util::FmtType::INT16: {
       int16_t v = *static_cast<const int16_t *>(arg.ptr);
       dst = modifier == 'X' ? hexToBuf(dst, v) : toBuf(dst, v);
       break;
     }
-    case Util::fmtType::UINT16: {
+    case Util::FmtType::UINT16: {
       uint16_t v = *static_cast<const uint16_t *>(arg.ptr);
       dst = modifier == 'X' ? hexToBuf(dst, v) : toBuf(dst, v);
       break;
     }
-    case Util::fmtType::INT32: {
+    case Util::FmtType::INT32: {
       int32_t v = *static_cast<const int32_t *>(arg.ptr);
       dst = modifier == 'X' ? hexToBuf(dst, v) : toBuf(dst, v);
       break;
     }
-    case Util::fmtType::UINT32: {
+    case Util::FmtType::UINT32: {
       uint32_t v = *static_cast<const uint32_t *>(arg.ptr);
       dst = modifier == 'X' ? hexToBuf(dst, v) : toBuf(dst, v);
       break;
     }
-    case Util::fmtType::INT64: {
+    case Util::FmtType::INT64: {
       int64_t v = *static_cast<const int64_t *>(arg.ptr);
       dst = modifier == 'X' ? hexToBuf(dst, v) : toBuf(dst, v);
       break;
     }
-    case Util::fmtType::UINT64: {
+    case Util::FmtType::UINT64: {
       uint64_t v = *static_cast<const uint64_t *>(arg.ptr);
       dst = modifier == 'X' ? hexToBuf(dst, v) : toBuf(dst, v);
       break;
     }
-    case Util::fmtType::I16F16: {
+    case Util::FmtType::I16F16: {
       i16f16_t v = *static_cast<const i16f16_t *>(arg.ptr);
       dst = modifier == 'X' ? hexToBuf(dst, v) : toBuf(dst, v);
       break;
     }
-    case Util::fmtType::CSTR: {
+    case Util::FmtType::CSTR: {
       const char *s = static_cast<const char *>(arg.ptr);
       dst = toBuf(dst, s);
       break;
     }
 
-    case Util::fmtType::NONE:
+    case Util::FmtType::NONE:
       break;
     }
   }
@@ -207,7 +207,7 @@ int __sprintfImpl(const Util::fmtStr &fmt, char *dst, Util::fmtArg *args, size_t
   return dst - orig;
 }
 
-int __printfImpl(const Util::fmtStr &fmt, Util::fmtArg *args, size_t n) {
+int __printfImpl(const Util::FmtStr &fmt, Util::fmtArg *args, size_t n) {
   size_t total = 0;
   size_t argIdx = 0;
   char modifier = '\0';
@@ -229,37 +229,37 @@ int __printfImpl(const Util::fmtStr &fmt, Util::fmtArg *args, size_t n) {
 
     const Util::fmtArg &arg = args[argIdx++];
     switch (arg.type) {
-    case Util::fmtType::INT8:
+    case Util::FmtType::INT8:
       total += modifier == 'X' ? sizeof(int8_t) * 2 : digitCount(*static_cast<const int8_t *>(arg.ptr));
       break;
-    case Util::fmtType::UINT8:
+    case Util::FmtType::UINT8:
       total += modifier == 'X' ? sizeof(uint8_t) * 2 : digitCount(*static_cast<const uint8_t *>(arg.ptr));
       break;
-    case Util::fmtType::INT16:
+    case Util::FmtType::INT16:
       total += modifier == 'X' ? sizeof(int16_t) * 2 : digitCount(*static_cast<const int16_t *>(arg.ptr));
       break;
-    case Util::fmtType::UINT16:
+    case Util::FmtType::UINT16:
       total += modifier == 'X' ? sizeof(uint16_t) * 2 : digitCount(*static_cast<const uint16_t *>(arg.ptr));
       break;
-    case Util::fmtType::INT32:
+    case Util::FmtType::INT32:
       total += modifier == 'X' ? sizeof(int32_t) * 2 : digitCount(*static_cast<const int32_t *>(arg.ptr));
       break;
-    case Util::fmtType::UINT32:
+    case Util::FmtType::UINT32:
       total += modifier == 'X' ? sizeof(uint32_t) * 2 : digitCount(*static_cast<const uint32_t *>(arg.ptr));
       break;
-    case Util::fmtType::INT64:
+    case Util::FmtType::INT64:
       total += modifier == 'X' ? sizeof(int64_t) * 2 : digitCount(*static_cast<const int64_t *>(arg.ptr));
       break;
-    case Util::fmtType::UINT64:
+    case Util::FmtType::UINT64:
       total += modifier == 'X' ? sizeof(uint64_t) * 2 : digitCount(*static_cast<const uint64_t *>(arg.ptr));
       break;
-    case Util::fmtType::I16F16:
+    case Util::FmtType::I16F16:
       total += modifier == 'X' ? sizeof(i16f16_t) * 2 : digitCount(*static_cast<const i16f16_t *>(arg.ptr));
       break;
-    case Util::fmtType::CSTR:
+    case Util::FmtType::CSTR:
       total += strlen(static_cast<const char *>(arg.ptr));
       break;
-    case Util::fmtType::NONE:
+    case Util::FmtType::NONE:
       break;
     }
   }

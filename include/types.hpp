@@ -368,6 +368,8 @@ constexpr Vec2 &operator-=(Vec2 &a, const Vec2 &b) {
   a.y -= b.y;
   return a;
 }
+constexpr bool operator==(const Vec2 &a, const Vec2 &b) { return a.x == b.x && a.y == b.y; }
+constexpr bool operator!=(const Vec2 &a, const Vec2 &b) { return a.x != b.x && a.y != b.y; }
 
 struct Vec3 {
   i16f16_t x, y, z;
@@ -445,7 +447,7 @@ constexpr Vec3 abs(const Vec3 &v) { return Vec3(abs(v.x), abs(v.y), abs(v.z)); }
 // Random utilities
 namespace Util {
 
-enum class fmtType {
+enum class FmtType {
   NONE,
   INT8,
   UINT8,
@@ -460,7 +462,7 @@ enum class fmtType {
 };
 
 struct fmtArg {
-  fmtType type;
+  FmtType type;
   const void *ptr;
 };
 
@@ -503,35 +505,35 @@ template <> struct makeUnsigned<uint64_t> {
 template <typename T> using makeUnsignedT = typename makeUnsigned<T>::type;
 
 template <typename T>
-constexpr fmtType argTypeV = isSameV<T, int8_t>         ? fmtType::INT8
-                             : isSameV<T, uint8_t>      ? fmtType::UINT8
-                             : isSameV<T, int16_t>      ? fmtType::INT16
-                             : isSameV<T, uint16_t>     ? fmtType::UINT16
-                             : isSameV<T, int32_t>      ? fmtType::INT32
-                             : isSameV<T, uint32_t>     ? fmtType::UINT32
-                             : isSameV<T, int64_t>      ? fmtType::INT64
-                             : isSameV<T, uint64_t>     ? fmtType::UINT64
-                             : isSameV<T, const char *> ? fmtType::CSTR
-                             : isSameV<T, i16f16_t>     ? fmtType::I16F16
-                                                        : fmtType::NONE;
+constexpr FmtType argTypeV = isSameV<T, int8_t>         ? FmtType::INT8
+                             : isSameV<T, uint8_t>      ? FmtType::UINT8
+                             : isSameV<T, int16_t>      ? FmtType::INT16
+                             : isSameV<T, uint16_t>     ? FmtType::UINT16
+                             : isSameV<T, int32_t>      ? FmtType::INT32
+                             : isSameV<T, uint32_t>     ? FmtType::UINT32
+                             : isSameV<T, int64_t>      ? FmtType::INT64
+                             : isSameV<T, uint64_t>     ? FmtType::UINT64
+                             : isSameV<T, const char *> ? FmtType::CSTR
+                             : isSameV<T, i16f16_t>     ? FmtType::I16F16
+                                                        : FmtType::NONE;
 
-struct fmtStr {
+struct FmtStr {
   const char *data;
   size_t size;
 
-  template <size_t N> constexpr fmtStr(const char (&s)[N]) : data(s), size(N - 1) {}
+  template <size_t N> constexpr FmtStr(const char (&s)[N]) : data(s), size(N - 1) {}
   operator const char *() const { return data; }
   char operator[](size_t i) const { return data[i]; }
 };
 
 template <typename T> constexpr bool isSignedV = T(-1) < T(0);
 
-template <typename T, size_t N> struct array {
+template <typename T, size_t N> struct Array {
   T arr[N];
   template <typename... Ts>
     requires(sizeof...(Ts) == N)
-  constexpr array(Ts &&...ts) : arr {ts...} {}
-  constexpr array() = default;
+  constexpr Array(Ts &&...ts) : arr {ts...} {}
+  constexpr Array() = default;
   constexpr size_t size() const { return N; }
 
   constexpr T &operator[](size_t i) { return arr[i]; }
@@ -541,27 +543,27 @@ template <typename T, size_t N> struct array {
   constexpr T *end() { return arr + N; }
 };
 
-template <typename T> struct vector {
+template <typename T> struct Vector {
   T *data = nullptr;
   size_t __capacity = 0;
   size_t __size = 0;
 
-  vector() = default;
-  ~vector() {
+  Vector() = default;
+  ~Vector() {
     if (data)
       MM::free(data);
   }
 
-  vector(const vector &) = delete;
-  vector &operator=(const vector &) = delete;
+  Vector(const Vector &) = delete;
+  Vector &operator=(const Vector &) = delete;
 
-  vector(vector &&other) noexcept : data(other.data), __capacity(other.__capacity), __size(other.__size) {
+  Vector(Vector &&other) noexcept : data(other.data), __capacity(other.__capacity), __size(other.__size) {
     other.data = nullptr;
     other.__capacity = 0;
     other.__size = 0;
   }
 
-  vector &operator=(vector &&other) noexcept {
+  Vector &operator=(Vector &&other) noexcept {
     if (this == &other)
       return *this;
 
@@ -582,7 +584,11 @@ template <typename T> struct vector {
     if (size <= __size)
       return;
 
-    T *newData = static_cast<T *>(MM::realloc(data, size * sizeof(T)));
+    T *newData;
+    if (!data)
+      newData = static_cast<T *>(MM::malloc(size * sizeof(T)));
+    else
+      newData = static_cast<T *>(MM::realloc(data, size * sizeof(T)));
     if (!newData)
       return;
 
@@ -604,10 +610,20 @@ template <typename T> struct vector {
     data[__size++] = std::move(value);
   }
 
+  void pushBack() {
+    if (__size == __capacity)
+      reserve(__capacity == 0 ? 8 : __capacity * 2);
+
+    data[__size++] = T();
+  }
+
   void popBack() {
     if (!empty())
       --__size;
   }
+
+  T &back() { return data[__size - 1]; }
+  T &front() { return data[0]; }
 
   T &operator[](size_t i) { return data[i]; }
   T const &operator[](size_t i) const { return data[i]; }

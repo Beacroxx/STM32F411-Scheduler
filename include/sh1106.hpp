@@ -154,4 +154,11 @@ void drawFastRect(const Rect2 &r, bool fill = false, bool white = true);
  * @param s Null-terminated string to draw.
  */
 void drawText(const Vec2 &v, const char *s);
+
+/**
+ * @brief Draw centered text inside the given rectangle.
+ * @param r Rectangle to draw inside.
+ * @param s Null-terminated string to draw.
+ */
+void drawCenteredText(const Rect2 &r, const char *s);
 } // namespace SH1106
